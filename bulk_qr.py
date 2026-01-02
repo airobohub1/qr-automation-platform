@@ -1,82 +1,121 @@
 import streamlit as st
 import pandas as pd
-import qrcode
-import zipfile
-import os, base64
+import qrcode, os, zipfile, re
 from ui_header import render
 from ui_footer import render as footer
 
-TEMPLATE_FILE = "qr_template.xlsx"
+QR_SIZES = {
+    "🎫 ID Card / Badge – 25mm (300px)": 300,
+    "🏷 Asset / Sticker – 35mm (420px)": 420,
+    "🪧 Poster / Notice Board – 75mm (885px)": 885,
+    "🏗 Banner / Hoarding – 150mm (1770px)": 1770
+}
+
+QR_TYPES = [
+    "🌐 Website Link",
+    "🆔 Code / Text",
+    "💬 WhatsApp Number"
+]
+
+TEMPLATE_FILE = "bulk_qr_template.xlsx"
 
 def create_template():
     df = pd.DataFrame({
-        "company_name": ["Google", "OpenAI"],
-        "url": ["https://google.com", "https://openai.com"],
-        "status": ["Pending", "Pending"]
+        "value": ["https://airobohub.com"],
+        "status": ["Pending"]
     })
     df.to_excel(TEMPLATE_FILE, index=False)
 
-def right_download_link(file_path, label):
-    with open(file_path, "rb") as f:
-        b64 = base64.b64encode(f.read()).decode()
-    st.markdown(f"""
-    <div style="width:100%; text-align:right; margin-bottom:5px;">
-        <a href="data:application/octet-stream;base64,{b64}" download="{file_path}"
-           style="font-size:13px; text-decoration:none; padding:4px 10px;
-                  border:1px solid #ccc; border-radius:6px; color:#333;">
-           ⬇ {label}
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
+def safe_filename(value):
+    return re.sub(r'[\\/*?:"<>|]', "_", value)[:40]
 
 def app():
-    render("Bulk QR Generator", "Upload Excel file and generate QR codes in bulk")
+    render("Bulk QR Generator", "Generate enterprise-grade QR codes in bulk")
+
+    if "bulk_result" not in st.session_state:
+        st.session_state.bulk_result = None
+    if "bulk_success" not in st.session_state:
+        st.session_state.bulk_success = False
 
     if not os.path.exists(TEMPLATE_FILE):
         create_template()
 
-    # Right aligned template link
-    right_download_link(TEMPLATE_FILE, "Download Sample Excel")
+    # Right aligned Sample Excel
+    col_spacer, col_link = st.columns([5,1])
+    with col_link:
+        with open(TEMPLATE_FILE, "rb") as f:
+            st.download_button("Download Sample Excel", f, TEMPLATE_FILE)
 
-    uploaded_file = st.file_uploader("Upload Filled Excel File", type=["xlsx"])
+    with st.container(border=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            qr_type = st.selectbox("What do you want to encode?", QR_TYPES)
+        with col2:
+            size_label = st.selectbox("Where will you print this QR?", list(QR_SIZES.keys()))
 
-    if "generated" not in st.session_state:
-        st.session_state.generated = False
+        uploaded_file = st.file_uploader("Upload Filled Excel File", type=["xlsx"])
 
     if uploaded_file:
         df = pd.read_excel(uploaded_file)
+
+        if not {"value","status"}.issubset(df.columns):
+            st.error("Excel must contain only columns: value, status")
+            footer()
+            return
+
         st.dataframe(df, use_container_width=True)
 
-        if st.button("⚙ Generate QR Codes"):
-            os.makedirs("qr_bulk", exist_ok=True)
-            zip_path = "qr_bulk/bulk_qr_codes.zip"
+        if st.button("⚙ Generate Bulk QR Codes"):
+            out_dir = "bulk_qr_output"
+            os.makedirs(out_dir, exist_ok=True)
+            zip_path = f"{out_dir}/bulk_qr_codes.zip"
 
             with zipfile.ZipFile(zip_path, "w") as zipf:
-                for i, row in df.iterrows():
-                    name = str(row["company_name"]).replace(" ", "_").lower()
-                    qr = qrcode.make(row["url"])
-                    file_name = f"{name}.png"
-                    file_path = f"qr_bulk/{file_name}"
-                    qr.save(file_path)
-                    zipf.write(file_path, arcname=file_name)
-                    df.at[i, "status"] = "Completed"
+                for i,row in df.iterrows():
+                    raw = str(row["value"])
+                    valid = True
+                    data = raw
 
-            excel_path = "qr_bulk/updated_status.xlsx"
+                    if qr_type == "🌐 Website Link" and not raw.startswith(("http://","https://")):
+                        valid = False
+
+                    if qr_type == "💬 WhatsApp Number":
+                        if not re.match(r"^\d{10,15}$", raw):
+                            valid = False
+                        data = f"https://wa.me/{raw}"
+
+                    if not valid:
+                        df.at[i,"status"] = "Failed"
+                        continue
+
+                    qr = qrcode.make(data)
+                    qr = qr.resize((QR_SIZES[size_label], QR_SIZES[size_label]))
+
+                    fname = safe_filename(raw) + ".png"
+                    file_path = os.path.join(out_dir, fname)
+                    qr.save(file_path)
+                    zipf.write(file_path, arcname=fname)
+                    df.at[i,"status"] = "Completed"
+
+            excel_path = f"{out_dir}/bulk_qr_status.xlsx"
             df.to_excel(excel_path, index=False)
 
-            st.session_state.generated = True
-            st.session_state.zip_path = zip_path
-            st.session_state.excel_path = excel_path
+            st.session_state.bulk_result = {
+                "zip": zip_path,
+                "excel": excel_path
+            }
+            st.session_state.bulk_success = True
 
-    if st.session_state.generated:
-        col1, col2 = st.columns(2)
+    if st.session_state.bulk_success:
+        st.success("Bulk QR Codes generated successfully. Download them below.")
 
+    if st.session_state.bulk_result:
+        col1,col2 = st.columns(2)
         with col1:
-            with open(st.session_state.zip_path, "rb") as f:
+            with open(st.session_state.bulk_result["zip"],"rb") as f:
                 st.download_button("⬇ Download QR Codes ZIP", f, "bulk_qr_codes.zip")
-
         with col2:
-            with open(st.session_state.excel_path, "rb") as f:
-                st.download_button("⬇ Download Updated Excel", f, "updated_status.xlsx")
+            with open(st.session_state.bulk_result["excel"],"rb") as f:
+                st.download_button("⬇ Download Updated Excel", f, "bulk_qr_status.xlsx")
 
     footer()
