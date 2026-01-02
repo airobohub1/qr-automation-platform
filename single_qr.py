@@ -51,7 +51,7 @@ def app():
         with b2:
             gen = st.button("⚙ Generate", help="Generate QR Code")
         with b4:
-            clr = st.button("🔄 Clear")
+            clr = st.button("🔄 Reset")
 
     # ---------- CLEAR ----------
     if clr:
