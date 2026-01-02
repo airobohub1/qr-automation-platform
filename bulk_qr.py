@@ -37,17 +37,17 @@ def app():
         st.session_state.bulk_result = None
     if "bulk_success" not in st.session_state:
         st.session_state.bulk_success = False
+    if "bulk_errors" not in st.session_state:
+        st.session_state.bulk_errors = []
 
     if not os.path.exists(TEMPLATE_FILE):
         create_template()
 
-    # ---------- Sample Excel (Right aligned) ----------
     col_spacer, col_link = st.columns([5,1])
     with col_link:
         with open(TEMPLATE_FILE, "rb") as f:
             st.download_button("Download Sample Excel", f, TEMPLATE_FILE)
 
-    # ---------- Input Panel ----------
     with st.container(border=True):
         c1, c2 = st.columns(2)
         with c1:
@@ -65,7 +65,6 @@ def app():
 
         uploaded_file = st.file_uploader("Upload Filled Excel File", type=["xlsx"])
 
-    # ---------- File Processing ----------
     if uploaded_file:
         df = pd.read_excel(uploaded_file)
 
@@ -85,26 +84,31 @@ def app():
             status_text = st.empty()
             total = len(df)
 
+            errors = []
+
             with zipfile.ZipFile(zip_path, "w") as zipf:
                 for i, row in df.iterrows():
                     raw = str(row["value"])
                     data = raw
                     valid = True
+                    reason = ""
 
                     if qr_type == "🌐 Website Link" and not raw.startswith(("http://","https://")):
                         valid = False
+                        reason = "Invalid Website URL"
 
                     if qr_type == "💬 WhatsApp Number":
                         if not re.match(r"^\d{10,15}$", raw):
                             valid = False
+                            reason = "Invalid WhatsApp Number"
                         data = f"https://wa.me/{raw}"
 
                     if not valid:
                         df.at[i,"status"] = "Failed"
+                        errors.append({"Row No": i+1, "Value": raw, "Reason": reason})
                     else:
                         qr = qrcode.make(data)
                         qr = qr.resize((QR_SIZES[size_label], QR_SIZES[size_label]))
-
                         fname = safe_filename(raw) + ".png"
                         path = os.path.join(out_dir, fname)
                         qr.save(path)
@@ -122,18 +126,22 @@ def app():
 
             st.session_state.bulk_result = {"zip": zip_path, "excel": excel_path}
             st.session_state.bulk_success = True
+            st.session_state.bulk_errors = errors
 
-    # ---------- Output ----------
     if st.session_state.bulk_success:
         st.success("Bulk QR Codes generated successfully. Download them below.")
 
     if st.session_state.bulk_result:
-        o1, o2 = st.columns(2)
+        o1,o2 = st.columns(2)
         with o1:
             with open(st.session_state.bulk_result["zip"],"rb") as f:
                 st.download_button("⬇ Download QR Codes ZIP", f, "bulk_qr_codes.zip")
         with o2:
             with open(st.session_state.bulk_result["excel"],"rb") as f:
                 st.download_button("⬇ Download Updated Excel", f, "bulk_qr_status.xlsx")
+
+    if st.session_state.bulk_errors:
+        st.markdown("### ❌ Failed Records Summary")
+        st.dataframe(pd.DataFrame(st.session_state.bulk_errors), use_container_width=True)
 
     footer()
