@@ -3,3 +3,11 @@ qrcode[pil]
 pandas
 openpyxl
 reportlab
+fastapi 
+uvicorn 
+jinja2 
+python-multipart 
+itsdangerous
+argon2-cffi
+passlib[argon2]
+

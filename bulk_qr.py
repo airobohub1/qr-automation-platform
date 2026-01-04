@@ -43,11 +43,19 @@ def app():
     if not os.path.exists(TEMPLATE_FILE):
         create_template()
 
-    col_spacer, col_link = st.columns([5,1])
-    with col_link:
+    # ---------- Top Right Buttons (Download Sample + Reset) ----------
+    spacer, btn1, btn2 = st.columns([6,2,1])
+    with btn1:
         with open(TEMPLATE_FILE, "rb") as f:
             st.download_button("Download Sample Excel", f, TEMPLATE_FILE)
+    with btn2:
+        if st.button("🔄 Reset"):
+            for k in ["bulk_result", "bulk_success", "bulk_errors"]:
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.rerun()
 
+    # ---------- Input Panel ----------
     with st.container(border=True):
         c1, c2 = st.columns(2)
         with c1:
@@ -65,6 +73,7 @@ def app():
 
         uploaded_file = st.file_uploader("Upload Filled Excel File", type=["xlsx"])
 
+    # ---------- Processing ----------
     if uploaded_file:
         df = pd.read_excel(uploaded_file)
 
@@ -83,7 +92,6 @@ def app():
             progress = st.progress(0)
             status_text = st.empty()
             total = len(df)
-
             errors = []
 
             with zipfile.ZipFile(zip_path, "w") as zipf:
@@ -128,6 +136,7 @@ def app():
             st.session_state.bulk_success = True
             st.session_state.bulk_errors = errors
 
+    # ---------- Output ----------
     if st.session_state.bulk_success:
         st.success("Bulk QR Codes generated successfully. Download them below.")
 
