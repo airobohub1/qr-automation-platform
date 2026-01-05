@@ -18,11 +18,12 @@ small{color:#666;}
 <div class="card">
 <h2>Create Account</h2>
 {% if error %}<div class="error">{{error}}</div>{% endif %}
-<form method="post">
+<form method="post" action="/register">
 <input name="name" value="{{name}}" placeholder="Full Name" required>
 <input name="mobile" value="{{mobile}}" placeholder="Mobile Number" required>
 <input name="email" value="{{email}}" placeholder="Email Address" required>
 <input name="location" value="{{location}}" placeholder="Location" required>
+<input type="hidden" name="plan" value="{{ plan }}">
 <textarea name="business_info">{{business_info}}</textarea>
 <!-- <textarea name="business_info" placeholder="About your Business (Optional)"></textarea> -->
 <input type="password" name="password" placeholder="Password" required>
