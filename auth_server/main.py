@@ -3,16 +3,16 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from datetime import datetime
 from uuid import uuid4
-from requests import request
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from auth_server.database import SessionLocal, Base, engine
 from auth_server.models import User, UsageStats, UserPlanDetails
+from auth_server.security import hash_password, verify_password
 import os
 
-from auth_server.security import validate_password, hash_password
-from auth_server.email_service import send_activation_email
+from auth_server.services.email_service import send_activation_email
 from starlette.middleware.sessions import SessionMiddleware
+from auth_server.config import STREAMLIT_BASE_URL
 
 
 def get_db():
@@ -83,93 +83,12 @@ def login_user(
         })
 
     request.session["user_id"] = user.id
-    return RedirectResponse("/dashboard", status_code=302)
+    # return RedirectResponse("/dashboard", status_code=302)
     # return RedirectResponse(f"http://localhost:8501?user_id={user.id}", status_code=302)
+    return RedirectResponse(f"{STREAMLIT_BASE_URL}?user_id={user.id}", status_code=302)
 
 
 # Login endpoint -get and post - login
-from auth_server.security import verify_password
-
-
-@app.post("/register")
-def register(
-    request: Request,
-    name: str = Form(...),
-    mobile: str = Form(...),
-    location: str = Form(...),
-    business_info: str = Form(""),
-    email: str = Form(...),
-    password: str = Form(...),
-    plan: str = Form(...),
-    db: Session = Depends(get_db)
-):
-
-    # Check existing user
-    if db.query(User).filter(User.email == email).first():
-        return templates.TemplateResponse("register.html", {
-            "request": request,
-            "error": "Account already exists",
-            "plan": plan
-        })
-
-    hashed_pwd = hash_password(password)
-    today = datetime.utcnow()
-    verify_token = str(uuid4())
-
-    user = User(
-        name=name,
-        mobile=mobile,
-        location=location,
-        business_info=business_info,
-        email=email,
-        password=hashed_pwd,
-        verified=0,
-        verify_token=verify_token,
-        reset_code=None,
-        plan=plan,                 # kept for backward compatibility
-        plan_start=today,
-        plan_expiry=None,
-        created_at=today
-    )
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    #  Assign FREE plan in user_plan_details
-    free_plan = UserPlanDetails(
-        user_id=user.id,
-        plan_type="free",
-        amount=0,
-        payment_status="success",
-        plan_start=today,
-        plan_expiry=None,
-        is_active=1
-    )
-    db.add(free_plan)
-
-    #  Create usage_stats row
-    usage = UsageStats(
-        user_id=user.id,
-        date=today.date(),
-        qr_generated_today=0,
-        qr_generated_total=0,
-        limit_allowed=10
-    )
-    db.add(usage)
-    db.commit()
-
-    send_activation_email(email, verify_token)
-
-    # DO NOT redirect to login yet
-    return templates.TemplateResponse("check_email.html", {
-        "request": request,
-        "email": email
-    })
-
-
-
-# End of login endpoint - post - login
 
 # Registration page - get - register
 
@@ -323,9 +242,9 @@ def register(
 
     send_activation_email(email, verify_token)
 
-    return templates.TemplateResponse("login.html", {
+    return templates.TemplateResponse("check_email.html", {
         "request": request,
-        "success": "Account created. Please activate from your email."
+        "email": email
     })
 
 

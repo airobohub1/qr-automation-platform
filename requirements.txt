@@ -10,4 +10,6 @@ python-multipart
 itsdangerous
 argon2-cffi
 passlib[argon2]
-
+dotenv
+sqlalchemy
+databases[sqlite]
