@@ -13,3 +13,4 @@ passlib[argon2]
 dotenv
 sqlalchemy
 databases[sqlite]
+python-dotenv

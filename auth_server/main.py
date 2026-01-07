@@ -13,7 +13,8 @@ import os
 from auth_server.services.email_service import send_activation_email
 from starlette.middleware.sessions import SessionMiddleware
 from auth_server.config import STREAMLIT_BASE_URL
-
+from auth_server.models import QRUsageEvent
+from auth_server.config import FREE_PLAN_LIMIT
 
 def get_db():
     db = SessionLocal()
@@ -109,66 +110,6 @@ def register_page(request: Request, plan: str = "free"):
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-# @app.post("/register")
-# def register(
-#     request: Request,
-#     name: str = Form(...),
-#     mobile: str = Form(...),
-#     location: str = Form(...),
-#     business_info: str = Form(""),
-#     email: str = Form(...),
-#     password: str = Form(...),
-#     plan: str = Form(...),
-#     db: Session = Depends(get_db)
-# ):
-
-#     # Check existing user
-#     if db.query(User).filter(User.email==email).first():
-#         return templates.TemplateResponse("register.html", {
-#             "request":request,
-#             "error":"Account already exists",
-#             "plan":plan
-#         })
-
-#     # Hash password
-#     hashed_pwd = hash_password(password)
-
-#     # Subscription setup
-#     today = datetime.today()
-#     expiry = today + timedelta(days=30)
-
-#     payment_status = "NA" if plan=="free" else "PENDING"
-
-#     verify_token = str(uuid4())
-
-#     user = User(
-#         name=name,
-#         mobile=mobile,
-#         location=location,
-#         business_info=business_info,
-#         email=email,
-#         password=hashed_pwd,
-#         verified=0,
-#         verify_token=verify_token,
-#         reset_code=None,
-#         plan=plan,
-#         # payment_status=payment_status,
-
-#         plan_start=today.strftime("%Y-%m-%d"),
-#         plan_expiry=expiry.strftime("%Y-%m-%d"),
-#         created_at=today.strftime("%Y-%m-%d %H:%M:%S")
-#     )
-#     payment_status = "NA" if plan=="free" else "PENDING"
-
-#     db.add(user)
-#     db.commit()
-
-#     send_activation_email(email, verify_token)
-
-#     return templates.TemplateResponse("login.html", {
-#         "request":request,
-#         "success":"Account created. Please activate from your email."
-#     })
 
 
 @app.post("/register")
@@ -250,26 +191,7 @@ def register(
 
 # end of Registration endpoint - post - register
 
-# Email verification endpoint
 
-# @app.get("/verify")
-# def verify(token: str, request: Request, db: Session = Depends(get_db)):
-#     user = db.query(User).filter(User.verify_token==token).first()
-
-#     if not user:
-#         return templates.TemplateResponse("login.html", {
-#             "request":request,
-#             "error":"Invalid or expired activation link"
-#         })
-
-#     user.verified = 1
-#     user.verify_token = None
-#     db.commit()
-
-#     return templates.TemplateResponse("login.html", {
-#         "request":request,
-#         "success":"Your account has been activated. Please login."
-#     })
 
 @app.get("/verify")
 def verify_user(token: str, request: Request, db: Session = Depends(get_db)):
@@ -307,5 +229,69 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     })
 
 # end of dashboard endpoint
+
+# API to get user profile
+# this is to display user info in streamlit app / QR dashboard
+@app.get("/api/user-profile/{user_id}")
+def get_user_profile(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id==user_id).first()
+    return {
+        "name": user.name,
+        "business": user.business_info
+    }
+
+# end of API to get user profile
+
+
+# End point for QR COde generation log for usage tracking and also for audit trail
+# insert qr usage event
+
+@app.post("/api/log-usage/{user_id}")
+def log_usage(user_id: int, event_type: str = Form(...), count: int = Form(...), db: Session = Depends(get_db)):
+    usage = QRUsageEvent(user_id=user_id, event_type=event_type, count=count)
+    db.add(usage)
+    db.commit()
+    return {"status":"logged"}
+# End point for QR COde limit usage update
+
+
+
+# Fetch live usage for validation in streamlit app
+# @app.get("/api/usage/{user_id}")
+# def get_usage(user_id: int, db: Session = Depends(get_db)):
+#     today = datetime.utcnow().date()
+#     used = db.query(func.sum(QRUsageEvent.count)) \
+#              .filter(QRUsageEvent.user_id==user_id,
+#                      QRUsageEvent.status=="unbilled",
+#                      QRUsageEvent.created_at >= today).scalar() or 0
+#     return {"used": used, "limit": FREE_PLAN_LIMIT}
+
+from sqlalchemy import func
+from auth_server.models import QRUsageEvent
+
+@app.get("/api/usage/{user_id}")
+def get_usage(user_id: int, db: Session = Depends(get_db)):
+    today = datetime.utcnow().date()
+
+    used = db.query(func.sum(QRUsageEvent.count)) \
+        .filter(
+            QRUsageEvent.user_id == user_id,
+            QRUsageEvent.status == "unbilled",
+            QRUsageEvent.created_at >= today
+        ).scalar() or 0
+
+    return {"used": int(used)}
+
+
+#  fetch user detaisl for qr dashboard
+
+@app.get("/api/user/{user_id}")
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    return {
+        "name": user.name,
+        "business": user.business_info,
+        "plan": user.plan
+    }
 
 

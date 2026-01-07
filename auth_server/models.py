@@ -56,3 +56,15 @@ class UsageStats(Base):
     qr_generated_today = Column(Integer, default=0)
     qr_generated_total = Column(Integer, default=0)
     limit_allowed = Column(Integer, default=10)
+
+
+# QR Usage Events for billing and validation
+class QRUsageEvent(Base):
+    __tablename__ = "qr_usage_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer)
+    event_type = Column(String)
+    count = Column(Integer)
+    status = Column(String, default="unbilled")
+    created_at = Column(DateTime, default=datetime.utcnow)

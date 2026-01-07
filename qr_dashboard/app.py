@@ -1,44 +1,21 @@
-# import streamlit as st
-
-# st.set_page_config(page_title="AI ROBO HUB – QR Automation Platform", layout="wide")
-
-# params = st.query_params
-# user_id = params.get("user_id")
-
-# if not user_id:
-#     st.error("❌ Unauthorized Access")
-#     st.stop()
-
-# st.title("AI ROBO HUB – QR Automation Platform")
-# st.success(f"Welcome User ID: {user_id}")
-
-# st.markdown("### QR Code Dashboard")
-
-# col1, col2 = st.columns(2)
-
-# with col1:
-#     st.button("➕ Generate Single QR")
-
-# with col2:
-#     st.button("📂 Bulk QR Upload")
 
 import streamlit as st
-
-st.set_page_config(page_title="AI ROBO HUB – QR Automation Platform", layout="wide")
-
-# params = st.query_params
-# user_id = params.get("user_id")
-
-# if not user_id:
-#     st.error("❌ Unauthorized Access")
-#     st.stop()
-
+import requests
+import os
+import requests
 
 from single_qr import single_qr_page
 from bulk_qr import bulk_qr_page
 
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="../.env")
+FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL")
 
-import os
+st.set_page_config(page_title="AI ROBO HUB – QR Automation Platform", layout="wide")
+
+
+
+
 
 params = st.query_params
 user_id = params.get("user_id")
@@ -52,6 +29,18 @@ if not user_id:
     else:
         st.error("❌ Unauthorized Access")
         st.stop()
+
+
+user_profile = {}
+if user_id != "DEV_USER":
+    try:
+        r = requests.get(f"{FASTAPI_BASE_URL}/api/user-profile/{user_id}")
+        user_profile = r.json()
+    except:
+        user_profile = {}
+
+from ui.ui_layout import render_layout
+render_layout(user_profile)
 
 
 # Session state for navigation
@@ -77,38 +66,38 @@ st.sidebar.button("🚪 Logout")
 # -------- PAGE ROUTER -------- #
 
 def dashboard_page():
+
+    import requests
+
+    try:
+        usage_resp = requests.get(f"{FASTAPI_BASE_URL}/api/usage/{user_id}", timeout=5).json()
+        used = usage_resp.get("used", 0)
+    except Exception:
+        used = 0
+
+    try:
+        profile_resp = requests.get(f"{FASTAPI_BASE_URL}/api/user/{user_id}", timeout=5).json()
+        plan = profile_resp.get("plan", "FREE").upper()
+        name = profile_resp.get("name", "User")
+        business = profile_resp.get("business", "")
+    except Exception:
+        plan, name, business = "FREE", "User", ""
+
     st.title("📊 QR Automation Dashboard")
 
-    st.markdown("### Welcome to AI ROBO HUB – QR Automation Platform")
-    st.success(f"Logged in User ID: {user_id}")
-
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        st.metric("Today's QR Usage", "0 / 10")
-
+        st.metric("Today's QR Usage", used)
     with col2:
-        st.metric("Plan", "FREE")
-
+        st.metric("Plan", plan)
     with col3:
-        st.metric("Status", "Active")
+        st.metric("User", name)
 
-    st.markdown("---")
+    st.write("Business:", business)
     st.write("Use left menu to generate Single or Bulk QR Codes.")
 
 
-# def single_qr_page():
-#     st.title("➕ Generate Single QR Code")
-#     text = st.text_input("Enter Text / URL")
-#     if st.button("Generate QR"):
-#         st.success("QR Generated Successfully (mock)")
-
-# def bulk_qr_page():
-#     st.title("📂 Bulk QR Generator")
-#     file = st.file_uploader("Upload CSV file")
-#     if file:
-#         st.success("Bulk QR Generated (mock)")
-
+# need to check wether below code is part of the above function or outside
 
 if st.session_state.page == "dashboard":
     dashboard_page()
