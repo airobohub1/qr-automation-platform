@@ -37,6 +37,17 @@ div.stButton > button { width: 100%; }
 </style>
 """, unsafe_allow_html=True)
 
+st.sidebar.markdown("""
+<style>
+div.stButton > button {
+    width: 100% !important;
+    height: 42px !important;
+    margin-bottom: 6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # # ---------- SESSION VALIDATION ----------
 
 # def validate_session():
@@ -203,22 +214,62 @@ def dashboard_page():
     c3.metric("Remaining",usage["remaining"])
 
 # ---------- PROFILE ----------
-def profile_page():
-    res=requests.get(f"{FASTAPI_BASE_URL}/api/profile/{user_id}")
-    profile=res.json()
 
-    with st.form("profile_form"):
-        name=st.text_input("Full Name",profile.get("name",""))
-        business_name=st.text_input("Business Name",profile.get("business_name",""))
-        mobile=st.text_input("Mobile",profile.get("mobile",""))
-        save=st.form_submit_button("💾 Save")
+def profile_page():
+    res = requests.get(f"{FASTAPI_BASE_URL}/api/profile/{user_id}")
+    if res.status_code != 200:
+        st.error("Unable to load profile")
+        return
+
+    profile = res.json()
+
+    st.markdown("## 👤 My Profile")
+
+    with st.form(f"profile_form_{user_id}"):
+        name = st.text_input("Full Name", profile.get("name",""))
+        business_name = st.text_input("Business Name", profile.get("business_name",""))
+        business_info = st.text_area("Business Info", profile.get("business_info",""))
+        mobile = st.text_input("Mobile", profile.get("mobile",""))
+        location = st.text_input("Location", profile.get("location",""))
+        email = st.text_input("Email", profile.get("email",""), disabled=True)
+
+        save = st.form_submit_button("💾 Update Profile")
 
     if save:
-        requests.post(f"{FASTAPI_BASE_URL}/api/profile/{user_id}",data={
-            "name":name,"business_name":business_name,"mobile":mobile
-        })
-        st.success("Profile updated")
-        st.rerun()
+        r = requests.post(
+            f"{FASTAPI_BASE_URL}/api/profile/{user_id}",
+            data={
+                "name": name,
+                "business_name": business_name,
+                "mobile": mobile,
+                "location": location,
+                "business_info": business_info
+            }
+        )
+
+        if r.status_code == 200:
+            st.success("Profile updated successfully")
+            st.rerun()
+        else:
+            st.error("Profile update failed")
+
+
+# def profile_page():
+#     res=requests.get(f"{FASTAPI_BASE_URL}/api/profile/{user_id}")
+#     profile=res.json()
+
+#     with st.form("profile_form"):
+#         name=st.text_input("Full Name",profile.get("name",""))
+#         business_name=st.text_input("Business Name",profile.get("business_name",""))
+#         mobile=st.text_input("Mobile",profile.get("mobile",""))
+#         save=st.form_submit_button("💾 Save")
+
+#     if save:
+#         requests.post(f"{FASTAPI_BASE_URL}/api/profile/{user_id}",data={
+#             "name":name,"business_name":business_name,"mobile":mobile
+#         })
+#         st.success("Profile updated")
+#         st.rerun()
 
 
 #---------------lead form----------------
