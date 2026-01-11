@@ -10,6 +10,7 @@ class User(Base):
 
     # Profile
     name = Column(String)
+    business_name = Column(String, nullable=True)
     mobile = Column(String)
     location = Column(String)
     business_info = Column(String)
@@ -17,7 +18,7 @@ class User(Base):
     # Auth
     email = Column(String, unique=True, index=True)
     password = Column(String)
-
+    token_expiry = Column(DateTime, nullable=True)
     verified = Column(Integer, default=0)
     verify_token = Column(String)
     reset_code = Column(String)
@@ -66,5 +67,39 @@ class QRUsageEvent(Base):
     user_id = Column(Integer)
     event_type = Column(String)
     count = Column(Integer)
-    status = Column(String, default="unbilled")
+    # status = Column(String, default="unbilled")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# Plan Definition Table
+
+class Plan(Base):
+    __tablename__ = "plans"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    daily_limit = Column(Integer)
+    total_limit = Column(Integer)
+
+# lead capture table
+class Lead(Base):
+    __tablename__ = "leads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    business_name = Column(String)
+    email = Column(String)
+    mobile = Column(String)
+    plan = Column(String)
+    source = Column(String)
+    status = Column(String, default="NEW")
+    created_at = Column(String)
+
+# PLAN MASTER TABLE
+
+class PlanMaster(Base):
+    __tablename__ = "plan_master"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plan_name = Column(String, unique=True)
+    daily_limit = Column(Integer)
+    total_limit = Column(Integer)
+

@@ -21,5 +21,16 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 
 FREE_PLAN_LIMIT = os.getenv("FREE_PLAN_LIMIT")
 PRO_PLAN_LIMIT = os.getenv("PRO_PLAN_LIMIT")
+COMPANY_NAME = os.getenv("COMPANY_NAME")
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL")
+SUPPORT_MOBILE = os.getenv("SUPPORT_MOBILE")
+FREE_PLAN_DAILY_LIMIT = int(os.getenv("FREE_PLAN_DAILY_LIMIT", "10"))
+FREE_PLAN_TOTAL_LIMIT = int(os.getenv("FREE_PLAN_TOTAL_LIMIT", "100"))
+
+DEV_USER_ID = int(os.getenv("DEV_USER_ID", "0"))    
+APP_SECRET_KEY = os.getenv("APP_SECRET_KEY")
+
+
+
 
 # we should remove after testing

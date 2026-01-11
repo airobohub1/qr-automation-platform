@@ -14,3 +14,4 @@ dotenv
 sqlalchemy
 databases[sqlite]
 python-dotenv
+passlib[bcrypt]

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Activation Link Expired</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            width: 420px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .card h2 { color: #d9534f; }
+        .card a {
+            text-decoration: none;
+            color: white;
+            background: #007bff;
+            padding: 10px 18px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>Activation Link Expired ⏰</h2>
+    <p>Your activation link is no longer valid.</p>
+    <p>Please request a new activation link.</p>
+    <br>
+    <a href="/resend-activation?email={{email}}">Resend Activation Link</a>
+</div>
+</body>
+</html>

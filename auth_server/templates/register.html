@@ -20,6 +20,7 @@ small{color:#666;}
 {% if error %}<div class="error">{{error}}</div>{% endif %}
 <form method="post" action="/register">
 <input name="name" value="{{name}}" placeholder="Full Name" required>
+<input type="text" name="business_name" placeholder="Business / Company Name" required>
 <input name="mobile" value="{{mobile}}" placeholder="Mobile Number" required>
 <input name="email" value="{{email}}" placeholder="Email Address" required>
 <input name="location" value="{{location}}" placeholder="Location" required>

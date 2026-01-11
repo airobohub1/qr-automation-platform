@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resend Activation</title>
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f6f8;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+        }
+        .box{
+            background:white;
+            padding:35px;
+            width:400px;
+            border-radius:10px;
+            text-align:center;
+            box-shadow:0 0 15px rgba(0,0,0,0.1);
+        }
+        input{
+            width:90%;
+            padding:10px;
+            margin-top:15px;
+        }
+        button{
+            background:#007bff;
+            color:white;
+            border:none;
+            padding:10px 18px;
+            margin-top:20px;
+            border-radius:6px;
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h3>🔄 Resend Activation Link</h3>
+    <form action="/resend-activation" method="post">
+        <input type="email" name="email" placeholder="Enter registered email" required>
+        <br>
+        <button type="submit">Send New Link</button>
+    </form>
+    {% if msg %}
+    <p style="color:green;">{{msg}}</p>
+    {% endif %}
+    {% if error %}
+    <p style="color:red;">{{error}}</p>
+    {% endif %}
+</div>
+</body>
+</html>
