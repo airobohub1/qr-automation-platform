@@ -91,7 +91,9 @@ def login(request: Request,
     if not user.verified:
         return templates.TemplateResponse("login.html", {
             "request": request,
-            "msg": "Please activate your account from email"
+            "msg": "Please activate your account from email",
+            "resend": True,
+            "email": email
         })
 
     token = generate_session_token(user.id)
@@ -474,20 +476,23 @@ from auth_server.models import QRUsageEvent
 #     return {"used": int(used)}
 
 @app.get("/api/usage/{user_id}")
-def get_usage(user_id: int, db: Session = Depends(get_db)):
+def get_usage(user_id:int, db:Session=Depends(get_db)):
     today = datetime.utcnow().date()
 
-    today_count = db.query(func.sum(QRUsageEvent.count)) \
-        .filter(QRUsageEvent.user_id == user_id,
-                func.date(QRUsageEvent.created_at) == today).scalar() or 0
+    today_used = db.query(func.sum(QRUsageEvent.count))\
+        .filter(QRUsageEvent.user_id==user_id,
+                func.date(QRUsageEvent.created_at)==today).scalar() or 0
 
-    total = db.query(func.sum(QRUsageEvent.count)) \
-        .filter(QRUsageEvent.user_id == user_id).scalar() or 0
+    total = db.query(func.sum(QRUsageEvent.count))\
+        .filter(QRUsageEvent.user_id==user_id).scalar() or 0
 
-    plan_limit = 100  # free plan default
-    remaining = max(plan_limit - total, 0)
+    plan = db.query(PlanMaster).filter(PlanMaster.plan_name=="free").first()
 
-    return {"today": today_count, "total": total, "remaining": remaining}
+    return {
+        "today": int(today_used),
+        "total": int(total),
+        "remaining": max(plan.total_limit-total,0)
+    }
 
 
 #  fetch user detaisl for qr dashboard
@@ -513,7 +518,6 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
         "business_info": user.business_info,
         "mobile": user.mobile,
         "location": user.location,
-        "business_info": user.business_info,
         "email": user.email,
         "plan": user.plan
 
@@ -525,9 +529,9 @@ def update_profile(
     user_id: int,
     name: str = Form(...),
     business_name: str = Form(...),
+    business_info: str = Form(""),
     mobile: str = Form(...),
     location: str = Form(...),
-    business_info: str = Form(""),
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()

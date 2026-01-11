@@ -50,15 +50,18 @@ button {
 <div class="card">
 <h2>AI ROBO HUB – Login</h2>
 {% if error %}<div class="error">{{error}}</div>{% endif %}
-{% if resend %}
+<!-- {% if resend %}
 <p style="margin-top:10px;">
     Didn’t receive the activation link?  
     <a href="/resend-activation?email={{ email }}" style="color:#4f46e5;">
         Click here to resend
     </a>
 </p>
+{% endif %} -->
+{% if resend %}
+<p style="color:red;">Please activate your account.</p>
+<a href="/resend-activation?email={{email}}">🔁 Resend Activation Link</a>
 {% endif %}
-
 <form method="post" action="/login">
 <input name="email" placeholder="Email" required>
 <input type="password" name="password" placeholder="Password" required>

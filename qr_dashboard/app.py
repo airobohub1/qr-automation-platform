@@ -220,6 +220,32 @@ def profile_page():
         st.success("Profile updated")
         st.rerun()
 
+
+#---------------lead form----------------
+
+def lead_form(plan):
+    st.markdown(f"## 🚀 {plan.upper()} PLAN – Get Started")
+
+    with st.form("lead_form"):
+        name = st.text_input("Full Name")
+        business = st.text_input("Business Name")
+        email = st.text_input("Email")
+        mobile = st.text_input("Mobile")
+        submit = st.form_submit_button("📨 Submit")
+
+    if submit:
+        requests.post(f"{FASTAPI_BASE_URL}/api/lead", data={
+            "name": name,
+            "business_name": business,
+            "email": email,
+            "mobile": mobile,
+            "plan": plan
+        })
+        st.success("✅ Thank you! Our executive will contact you shortly.")
+        st.button("⬅ Back to Dashboard", on_click=lambda: st.session_state.update({"page":"dashboard"}))
+
+
+
 # ---------- ROUTER ----------
 if st.session_state.page=="dashboard": dashboard_page()
 elif st.session_state.page=="single": single_qr_page(user_id)
