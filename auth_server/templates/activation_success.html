@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Account Activated</title>
@@ -34,5 +34,83 @@
     <br>
     <a href="/login">Go to Login</a>
 </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Activated – AI ROBO HUB</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1f2937, #111827);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            width: 420px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        }
+
+        .card h1 {
+            color: #16a34a;
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #374151;
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(to right, #1d4ed8, #1e40af);
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🎉 Account Activated Successfully!</h1>
+        <p>
+            Your AI ROBO HUB QR Automation Platform account is now active.  
+            You can login and start generating QR codes instantly.
+        </p>
+
+        <!-- THIS IS THE IMPORTANT PART -->
+        <a href="/login?next=/qr" class="btn">Login to QR Dashboard</a>
+
+        <div class="footer">
+            © {{ datetime.utcnow().year }} AI ROBO HUB Consulting Services Pvt. Ltd.
+        </div>
+    </div>
 </body>
 </html>

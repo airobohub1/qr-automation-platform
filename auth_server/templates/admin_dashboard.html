@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI ROBO HUB – Admin Panel</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; background:#f5f7fb; margin:0; }
+.header {
+    background:linear-gradient(90deg,#1f3c88,#00c9a7);
+    color:white; padding:18px 30px; font-size:22px;
+}
+.container { padding:40px; }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:25px; }
+.card {
+    background:white; border-radius:12px; padding:30px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+    text-align:center;
+    transition:.3s;
+}
+.card:hover { transform:translateY(-6px); }
+.card a {
+    text-decoration:none; color:#1f3c88; font-size:18px; font-weight:600;
+}
+.footer { text-align:center; margin-top:40px; color:#777; }
+</style>
+</head>
+<body>
+
+<div class="header">🛡 AI ROBO HUB – Admin Control Panel</div>
+
+<div class="container">
+    <div class="grid">
+        <div class="card"><a href="/admin/users">👥 Manage Users</a></div>
+        <div class="card"><a href="/admin/leads">📩 Manage Leads</a></div>
+        <!-- <div class="card"><a href="/admin/subscriptions">💳 Subscriptions</a></div> -->
+    </div>
+
+    <div class="footer">© 2026 AI ROBO HUB Consulting Services Pvt Ltd</div>
+</div>
+
+</body>
+</html>

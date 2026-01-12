@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin – Users</title>
+<style>
+body{font-family:'Segoe UI';background:#f5f7fb;margin:0;}
+.header{background:#1f3c88;color:white;padding:15px 30px;font-size:20px;}
+.container{padding:30px;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;}
+th{background:#f0f4ff;}
+.back{margin-bottom:15px;display:inline-block;text-decoration:none;color:#1f3c88;}
+.btn{padding:5px 10px;border:none;border-radius:5px;background:#00c9a7;color:white;}
+</style>
+</head>
+<body>
+
+<div class="header">👥 User Management</div>
+<div class="container">
+
+<a class="back" href="/admin">← Back to Admin Home</a>
+
+<table>
+<tr>
+<th>Name</th><th>Email</th><th>Plan</th><th>Role</th><th>Status</th><th>Action</th><th>Plan Expiry</th>
+
+</tr>
+{% for u in users %}
+<tr>
+<td>{{u.name}}</td>
+<td>{{u.email}}</td>
+<td>{{u.plan}}</td>
+<td>{{u.role}}</td>
+<td>{{"Active" if u.verified else "Inactive"}}</td>
+<td>
+<form method="post" action="/admin/toggle-user">
+<input type="hidden" name="user_id" value="{{u.id}}">
+<button class="btn">Enable / Disable</button>
+</form>
+</td>
+<td>{{u.plan_expiry.strftime("%d-%b-%Y") if u.plan_expiry else "FREE"}}</td>
+<td>
+      {% if u.is_active %}
+         <span style="color:green">Active</span>
+      {% else %}
+         <span style="color:red">Expired</span>
+      {% endif %}
+  </td>
+
+  <td>
+     <form method="post" action="/admin/renew">
+        <input type="hidden" name="user_id" value="{{u.id}}">
+        <button class="btn btn-sm btn-primary">Renew</button>
+     </form>
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+</div>
+</body>
+</html>

@@ -31,6 +31,9 @@ class User(Base):
 
     # Audit
     created_at = Column(String)
+    role = Column(String, default="user")   # user | admin | sales
+    is_active = Column(Boolean, default=True)
+
 
 
 class UserPlanDetails(Base):

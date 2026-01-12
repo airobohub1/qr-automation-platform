@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FAQ – AI ROBO HUB</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(120deg,#020617,#111827);
+            margin: 0;
+            padding: 0;
+            color: #fff;
+        }
+        .navbar {
+            background:#020617;
+            padding:16px 50px;
+            font-size:22px;
+            font-weight:bold;
+        }
+        .navbar a {
+            color:#60a5fa;
+            text-decoration:none;
+            float:right;
+            font-size:14px;
+            margin-top:4px;
+        }
+        .wrapper {
+            max-width: 900px;
+            margin: 40px auto;
+            background:#ffffff;
+            color:#111827;
+            padding:40px 50px;
+            border-radius:12px;
+            box-shadow:0 25px 60px rgba(0,0,0,0.35);
+        }
+        h1 {
+            margin-top:0;
+            text-align:center;
+            color:#020617;
+        }
+        .faq-item {
+            border-bottom:1px solid #e5e7eb;
+            padding:18px 0;
+        }
+        .faq-item:last-child { border-bottom:none; }
+
+        .question {
+            font-size:17px;
+            font-weight:600;
+            cursor:pointer;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        .answer {
+            display:none;
+            margin-top:10px;
+            color:#374151;
+            line-height:1.6;
+        }
+        .arrow {
+            font-size:14px;
+            color:#2563eb;
+        }
+        .footer {
+            text-align:center;
+            margin-top:40px;
+        }
+        .footer a {
+            text-decoration:none;
+            color:#2563eb;
+            font-weight:600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    AI ROBO HUB – Help Center
+    <a href="/">← Back to Home</a>
+</div>
+
+<div class="wrapper">
+<h1>Frequently Asked Questions</h1>
+
+<!-- FAQ BLOCKS -->
+
+<div class="faq-item">
+    <div class="question">What is AI ROBO HUB QR Automation Platform? <span class="arrow">▼</span></div>
+    <div class="answer">
+        It is a smart QR generation and automation platform to create Single & Bulk QR codes with usage limits,
+        business tracking, dashboard analytics, and subscription control.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">What are the available plans? <span class="arrow">▼</span></div>
+    <div class="answer">
+        We offer Free, Paid, and Enterprise plans. Each plan has daily and total QR generation limits.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">What happens if my Free plan QR limit is over? <span class="arrow">▼</span></div>
+    <div class="answer">
+        You will be restricted from generating further QR codes and prompted to upgrade your plan.
+        Our sales executive will contact you after submitting the upgrade form.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">How do I upgrade my plan? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Click on Paid or Enterprise plan → Submit Lead Form → Our team will reach out to complete your upgrade.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">Why do I need to activate my account? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Activation verifies your email and secures your account. Without activation you cannot login.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">My activation link expired. What should I do? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Go to Login page → Click Resend Activation → You will receive a fresh link.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">Why am I getting “Please Login to Continue” error? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Your session has expired or cookies are blocked. Please login again to refresh your session.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">How long does my login session remain active? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Sessions are valid for 24 hours. After expiry you must login again.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">Is my data safe and secure? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Yes. We use signed session tokens, password hashing, email verification, and secure cookies.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">Can I generate QR codes in bulk? <span class="arrow">▼</span></div>
+    <div class="answer">
+        Yes. Bulk QR generation is available via Excel upload from your dashboard.
+    </div>
+</div>
+
+<div class="faq-item">
+    <div class="question">How do I contact support? <span class="arrow">▼</span></div>
+    <div class="answer">
+        You can reach our support team via the contact details provided in your activation email.
+    </div>
+</div>
+
+<div class="footer">
+    <a href="/">← Back to Home</a>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll(".question").forEach(q => {
+    q.addEventListener("click", () => {
+        const ans = q.nextElementSibling;
+        const arrow = q.querySelector(".arrow");
+        if(ans.style.display === "block"){
+            ans.style.display = "none";
+            arrow.innerHTML = "▼";
+        } else {
+            ans.style.display = "block";
+            arrow.innerHTML = "▲";
+        }
+    });
+});
+</script>
+
+</body>
+</html>

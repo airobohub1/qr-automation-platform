@@ -1,12 +1,40 @@
 import streamlit as st
 import os, requests
 from dotenv import load_dotenv
+
 from single_qr import single_qr_page
 from bulk_qr import bulk_qr_page
 from ui.ui_layout import render_layout
 
+
 load_dotenv("../.env")
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL")
+
+# ---------------- SAFE SESSION INIT ----------------
+if "qr_session" not in st.session_state:
+    st.session_state.qr_session = None
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+# --------------------------------------------------
+
+params = st.query_params
+token = params.get("token")
+
+if token:
+    st.session_state.qr_session = token
+    st.query_params.clear()
+
+
+# if "qr_session" not in st.session_state:
+#     st.session_state.qr_session = None
+
+# params = st.query_params
+# token = params.get("token")
+
+# if token:
+#     st.session_state.qr_session = token
+#     st.query_params.clear()
 
 
 resp = requests.get(
@@ -145,15 +173,12 @@ import streamlit.components.v1 as components
 
 
 # ---------- SECURE SESSION GUARD ----------
-try:
-    resp = requests.get(
-        f"{FASTAPI_BASE_URL}/api/validate-session",
-        cookies=st.context.cookies,
-        timeout=5
-    )
-except:
-    st.error("❌ Unable to reach authentication server")
-    st.stop()
+
+resp = requests.get(
+    f"{FASTAPI_BASE_URL}/api/validate-session",
+    cookies=st.context.cookies,
+    timeout=5
+)
 
 if resp.status_code != 200:
     st.markdown("## 🔐 Please Login to Continue")
@@ -164,7 +189,62 @@ user = resp.json()
 user_id = user["id"]
 user_name = user["name"]
 business = user.get("business_name","")
-plan = user.get("plan","FREE")
+plan = user.get("plan","free")
+
+
+# if not st.session_state.qr_session:
+#     st.markdown("## 🔐 Please Login to Continue")
+#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
+#     st.stop()
+
+# resp = requests.get(
+#     f"{FASTAPI_BASE_URL}/api/validate-session",
+#     headers={"Authorization": st.session_state.qr_session},
+#     timeout=5
+# )
+
+# if resp.status_code != 200:
+#     st.session_state.qr_session = None
+#     st.markdown("## 🔐 Session expired. Please login again.")
+#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
+#     st.stop()
+
+# st.session_state.user = resp.json()
+# user_id = st.session_state.user["id"]
+# user_name = st.session_state.user["name"]
+# business = st.session_state.user.get("business_name","")
+# plan = st.session_state.user.get("plan","free")
+
+
+# user = resp.json()
+# user_id = user["id"]
+# user_name = user["name"]
+# business = user.get("business_name","")
+# plan = user.get("plan","free")
+
+
+
+
+# try:
+#     resp = requests.get(
+#         f"{FASTAPI_BASE_URL}/api/validate-session",
+#         cookies=st.context.cookies,
+#         timeout=5
+#     )
+# except:
+#     st.error("❌ Unable to reach authentication server")
+#     st.stop()
+
+# if resp.status_code != 200:
+#     st.markdown("## 🔐 Please Login to Continue")
+#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
+#     st.stop()
+
+# user = resp.json()
+# user_id = user["id"]
+# user_name = user["name"]
+# business = user.get("business_name","")
+# plan = user.get("plan","FREE")
 
 
 
@@ -190,9 +270,30 @@ if st.sidebar.button("👤 Profile"): st.session_state.page="profile"
 
 st.sidebar.markdown("---")
 
+# if st.sidebar.button("🚪 Logout"):
+#     st.markdown(
+#         "<meta http-equiv='refresh' content='0;url=http://127.0.0.1:8000/logout'>",
+#         unsafe_allow_html=True
+#     )
+#     st.stop()
+
+# if st.sidebar.button("🚪 Logout"):
+#     st.session_state.qr_session = None
+#     st.query_params.clear()
+#     st.markdown("<meta http-equiv='refresh' content='0;url=http://127.0.0.1:8000/login'>", unsafe_allow_html=True)
+#     st.stop()
+
+# if st.sidebar.button("🚪 Logout"):
+#     st.context.cookies.clear()
+#     st.markdown(
+#         "<meta http-equiv='refresh' content='0; url=http://127.0.0.1:8000/login'>",
+#         unsafe_allow_html=True
+#     )
+#     st.stop()
+
 if st.sidebar.button("🚪 Logout"):
     st.markdown(
-        "<meta http-equiv='refresh' content='0;url=http://127.0.0.1:8000/logout'>",
+        "<meta http-equiv='refresh' content='0; url=http://127.0.0.1:8000/logout'>",
         unsafe_allow_html=True
     )
     st.stop()

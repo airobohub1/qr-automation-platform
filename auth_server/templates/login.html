@@ -71,6 +71,7 @@ button {
 <form method="post" action="/login">
 <input name="email" placeholder="Email" required>
 <input type="password" name="password" placeholder="Password" required>
+<input type="hidden" name="next" value="{{ next }}">
 <button>Login</button>
 </form>
 <div class="links">

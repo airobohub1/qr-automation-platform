@@ -46,6 +46,20 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
             text-align: left;
         }
+        .topbar {
+            background:#111827;
+            padding:12px 40px;
+            color:#fff;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        .topbar a {
+            color:#fff;
+            text-decoration:none;
+            margin-left:20px;
+            font-weight:600;
+        }
         .plan h2 { margin-bottom: 10px; }
         .price { font-size: 26px; color:#4f46e5; }
         .plan ul { list-style:none; padding:0; }
@@ -64,11 +78,26 @@
 </head>
 <body>
 
+<div class="topbar">
+    <div style="font-size: 22;font-weight: bold;">
+         AI ROBO HUB   
+    </div>
+    <div  align="right" font="color:White">
+        <a href="/admin">Admin Panel</a>
+        <a href="/login"> Sign In</a> 
+        <a href="/register?plan=free">Sign Up  </a>
+        <a href="/faq">FAQ </a>
+    </div>
+
+</div>
+
 <div class="hero">
+        
     <h1>AI ROBO HUB - QR AUTOMATION PLATFORM</h1>
     
     <p>Generate, Manage & Track QR Codes at Scale</p>
 </div>
+
 
 <div class="pricing">
 
