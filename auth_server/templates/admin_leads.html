@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin – Leads</title>
+<title>Admin – Leads CRM</title>
 <style>
 body{font-family:'Segoe UI';background:#f5f7fb;margin:0;}
 .header{background:#00c9a7;color:white;padding:15px 30px;font-size:20px;}
@@ -10,40 +10,78 @@ table{width:100%;border-collapse:collapse;background:white;border-radius:10px;ov
 th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;}
 th{background:#e9fffa;}
 .back{margin-bottom:15px;display:inline-block;text-decoration:none;color:#00c9a7;}
+.filter-bar{margin-bottom:15px;display:flex;gap:10px;align-items:center;}
+.status-NEW{color:#007bff;font-weight:600;}
+.status-CONTACTED{color:#f0ad4e;font-weight:600;}
+.status-CONVERTED{color:#28a745;font-weight:600;}
+.status-CLOSED{color:#dc3545;font-weight:600;}
+.btn{background:#00c9a7;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;}
+.msg{background:#d1fae5;padding:10px;border-radius:6px;color:#065f46;margin-bottom:15px;}
 </style>
 </head>
 <body>
-
-<div class="header">📩 Lead Management</div>
+{% include "admin_header.html" %}
+<!-- <div class="header">📩 Lead Management CRM</div> -->
 <div class="container">
 
 <a class="back" href="/admin">← Back to Admin Home</a>
 
+{% if request.query_params.get('msg') %}
+<div class="msg">{{ request.query_params.get('msg') }}</div>
+{% endif %}
+
+<!-- FILTER -->
+<form class="filter-bar" method="get" action="/admin/leads">
+  <select name="plan">
+    <option value="">All Plans</option>
+    <!-- <option value="free" {% if selected_plan=='free' %}selected{% endif %}>Free</option> -->
+    <option value="paid" {% if selected_plan=='paid' %}selected{% endif %}>Paid</option>
+    <option value="enterprise" {% if selected_plan=='enterprise' %}selected{% endif %}>Enterprise</option>
+  </select>
+  <button class="btn" type="submit">Filter</button>
+</form>
+
+<!-- BULK FOLLOWUP -->
+<form method="post" action="/admin/lead-followup">
+<div class="filter-bar">
+  <select name="template_id">
+    {% for t in templates %}
+      <option value="{{t.id}}">{{t.name}}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Send Follow-up to Selected Leads</button>
+</div>
+
 <table>
 <tr>
-<th>Name</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Date</th>
+<th></th><th>Name</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Status</th><th>Date</th><th>Convert</th>
 </tr>
+
 {% for l in leads %}
 <tr>
+<td><input type="checkbox" name="lead_ids" value="{{l.id}}"></td>
 <td>{{l.name}}</td>
 <td>{{l.email}}</td>
 <td>{{l.mobile}}</td>
 <td>{{l.plan}}</td>
+<td class="status-{{l.status}}">{{l.status}}</td>
 <td>{{l.created_at}}</td>
 <td>
+{% if l.status!="CONVERTED" %}
 <form method="post" action="/admin/convert-lead">
-    <input type="hidden" name="lead_id" value="{{l.id}}">
-    <select name="plan">
-        <option value="paid">PAID</option>
-        <option value="enterprise">ENTERPRISE</option>
-    </select>
-    <button class="btn">Convert</button>
+  <input type="hidden" name="lead_id" value="{{l.id}}">
+  <select name="plan">
+    <option value="paid">PAID</option>
+    <option value="enterprise">ENTERPRISE</option>
+  </select>
+  <button class="btn">Convert</button>
 </form>
+{% endif %}
 </td>
-
 </tr>
 {% endfor %}
 </table>
+</form>
 
 </div>
 </body>

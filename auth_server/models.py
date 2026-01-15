@@ -33,6 +33,13 @@ class User(Base):
     created_at = Column(String)
     role = Column(String, default="user")   # user | admin | sales
     is_active = Column(Boolean, default=True)
+    reset_token  = Column(String(100), nullable=True)
+    reset_expiry = Column(DateTime, nullable=True)
+
+    status = Column(String, default="NEW")   # NEW, CONTACTED, CONVERTED, CLOSED
+    last_followup = Column(DateTime, nullable=True)
+
+
 
 
 
@@ -106,3 +113,14 @@ class PlanMaster(Base):
     daily_limit = Column(Integer)
     total_limit = Column(Integer)
 
+
+# Add Email Templates table
+class LeadEmailTemplate(Base):
+    __tablename__ = "lead_email_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    plan = Column(String)          # free / paid / enterprise
+    subject = Column(String)
+    body = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -26,17 +26,6 @@ if token:
     st.query_params.clear()
 
 
-# if "qr_session" not in st.session_state:
-#     st.session_state.qr_session = None
-
-# params = st.query_params
-# token = params.get("token")
-
-# if token:
-#     st.session_state.qr_session = token
-#     st.query_params.clear()
-
-
 resp = requests.get(
     f"{FASTAPI_BASE_URL}/api/validate-session",
     cookies=st.context.cookies
@@ -44,7 +33,7 @@ resp = requests.get(
 
 if resp.status_code != 200:
     st.markdown("## 🔐 Please Login to Continue")
-    st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
+    st.markdown(f"[Click here to Login]({FASTAPI_BASE_URL}/login)")
     st.stop()
 
 user = resp.json()
@@ -76,100 +65,9 @@ div.stButton > button {
 """, unsafe_allow_html=True)
 
 
-# # ---------- SESSION VALIDATION ----------
-
-# def validate_session():
-#     try:
-#         r = requests.get(
-#             f"{FASTAPI_BASE_URL}/api/validate-session",
-#             cookies=st.context.cookies,
-#             timeout=5
-#         )
-#         if r.status_code != 200:
-#             return None
-#         return r.json()
-#     except:
-#         return None
-
-# user = validate_session()
-
-# if not user:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# user_id   = user["id"]
-# user_name = user["name"]
-# business  = user.get("business_name","")
-# plan      = user.get("plan","FREE")
 
 
-import streamlit.components.v1 as components
-
-# components.html("""
-# <script>
-# document.cookie.split(';').forEach(c => {
-#     if (c.trim().startsWith("qr_session=")) {
-#         fetch("/_stcore/set_session", {
-#             method: "POST",
-#             headers: {"Content-Type":"application/json"},
-#             body: JSON.stringify({qr_session: c.split("=")[1]})
-#         });
-#     }
-# });
-# </script>
-# """, height=0)
-
-
-# def get_qr_session_cookie():
-#     headers = st.experimental_get_query_params()
-#     # return st.session_state.get("qr_session")
-
-
-# if "qr_session" not in st.session_state:
-#     # st.session_state.qr_session = None
-
-# if not st.session_state.qr_session:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-
-# ---------- SECURE SESSION GUARD ----------
-
-# resp = requests.get(
-#     f"{FASTAPI_BASE_URL}/api/validate-session",
-#     cookies=st.context.cookies
-# )
-
-# if resp.status_code != 200:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# user = resp.json()
-# user_id = user["id"]
-# user_name = user["name"]
-# business = user.get("business_name","")
-# plan = user.get("plan","FREE")
-
-
-# resp = requests.get(
-#     f"{FASTAPI_BASE_URL}/api/validate-session",
-#     headers={"Authorization": st.session_state.qr_session}
-# )
-
-# if resp.status_code != 200:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# user = resp.json()
-# user_id = user["id"]
-# user_name = user["name"]
-# business = user.get("business_name","")
-# plan = user.get("plan","FREE")
-
+# import streamlit.components.v1 as components
 
 
 # ---------- SECURE SESSION GUARD ----------
@@ -190,62 +88,6 @@ user_id = user["id"]
 user_name = user["name"]
 business = user.get("business_name","")
 plan = user.get("plan","free")
-
-
-# if not st.session_state.qr_session:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# resp = requests.get(
-#     f"{FASTAPI_BASE_URL}/api/validate-session",
-#     headers={"Authorization": st.session_state.qr_session},
-#     timeout=5
-# )
-
-# if resp.status_code != 200:
-#     st.session_state.qr_session = None
-#     st.markdown("## 🔐 Session expired. Please login again.")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# st.session_state.user = resp.json()
-# user_id = st.session_state.user["id"]
-# user_name = st.session_state.user["name"]
-# business = st.session_state.user.get("business_name","")
-# plan = st.session_state.user.get("plan","free")
-
-
-# user = resp.json()
-# user_id = user["id"]
-# user_name = user["name"]
-# business = user.get("business_name","")
-# plan = user.get("plan","free")
-
-
-
-
-# try:
-#     resp = requests.get(
-#         f"{FASTAPI_BASE_URL}/api/validate-session",
-#         cookies=st.context.cookies,
-#         timeout=5
-#     )
-# except:
-#     st.error("❌ Unable to reach authentication server")
-#     st.stop()
-
-# if resp.status_code != 200:
-#     st.markdown("## 🔐 Please Login to Continue")
-#     st.markdown("[Click here to Login](http://127.0.0.1:8000/login)")
-#     st.stop()
-
-# user = resp.json()
-# user_id = user["id"]
-# user_name = user["name"]
-# business = user.get("business_name","")
-# plan = user.get("plan","FREE")
-
 
 
 # ---------- GLOBAL STATE ----------
@@ -270,30 +112,10 @@ if st.sidebar.button("👤 Profile"): st.session_state.page="profile"
 
 st.sidebar.markdown("---")
 
-# if st.sidebar.button("🚪 Logout"):
-#     st.markdown(
-#         "<meta http-equiv='refresh' content='0;url=http://127.0.0.1:8000/logout'>",
-#         unsafe_allow_html=True
-#     )
-#     st.stop()
-
-# if st.sidebar.button("🚪 Logout"):
-#     st.session_state.qr_session = None
-#     st.query_params.clear()
-#     st.markdown("<meta http-equiv='refresh' content='0;url=http://127.0.0.1:8000/login'>", unsafe_allow_html=True)
-#     st.stop()
-
-# if st.sidebar.button("🚪 Logout"):
-#     st.context.cookies.clear()
-#     st.markdown(
-#         "<meta http-equiv='refresh' content='0; url=http://127.0.0.1:8000/login'>",
-#         unsafe_allow_html=True
-#     )
-#     st.stop()
 
 if st.sidebar.button("🚪 Logout"):
     st.markdown(
-        "<meta http-equiv='refresh' content='0; url=http://127.0.0.1:8000/logout'>",
+        f"<meta http-equiv='refresh' content='0; url={FASTAPI_BASE_URL}/logout'>",
         unsafe_allow_html=True
     )
     st.stop()
@@ -355,24 +177,6 @@ def profile_page():
             st.error("Profile update failed")
 
 
-# def profile_page():
-#     res=requests.get(f"{FASTAPI_BASE_URL}/api/profile/{user_id}")
-#     profile=res.json()
-
-#     with st.form("profile_form"):
-#         name=st.text_input("Full Name",profile.get("name",""))
-#         business_name=st.text_input("Business Name",profile.get("business_name",""))
-#         mobile=st.text_input("Mobile",profile.get("mobile",""))
-#         save=st.form_submit_button("💾 Save")
-
-#     if save:
-#         requests.post(f"{FASTAPI_BASE_URL}/api/profile/{user_id}",data={
-#             "name":name,"business_name":business_name,"mobile":mobile
-#         })
-#         st.success("Profile updated")
-#         st.rerun()
-
-
 #---------------lead form----------------
 
 def lead_form(plan):
@@ -395,7 +199,6 @@ def lead_form(plan):
         })
         st.success("✅ Thank you! Our executive will contact you shortly.")
         st.button("⬅ Back to Dashboard", on_click=lambda: st.session_state.update({"page":"dashboard"}))
-
 
 
 # ---------- ROUTER ----------

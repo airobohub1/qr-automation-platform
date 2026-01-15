@@ -3,18 +3,18 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from datetime import datetime,date
 from uuid import uuid4
+from typing import List
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from auth_server.database import SessionLocal, Base, engine
-from auth_server.models import User, UsageStats, UserPlanDetails, Lead, PlanMaster
+from auth_server.models import User, UsageStats, UserPlanDetails, Lead, PlanMaster, LeadEmailTemplate
 from auth_server.security import hash_password, verify_password, admin_required
 import os
 
 from auth_server.services.email_service import send_activation_email
 # from starlette.middleware.sessions import SessionMiddleware
-from auth_server.config import STREAMLIT_BASE_URL
+from auth_server.config import STREAMLIT_BASE_URL,FASTAPI_BASE_URL,FREE_PLAN_LIMIT
 from auth_server.models import QRUsageEvent, Plan
-from auth_server.config import FREE_PLAN_LIMIT
 from sqlalchemy import text,func
 
 
@@ -86,7 +86,6 @@ from auth_server.security import generate_session_token
 from fastapi.responses import RedirectResponse
 from urllib.parse import quote
 
-
 @app.post("/login")
 def login_user(
     request: Request,
@@ -112,7 +111,12 @@ def login_user(
 
     token = generate_session_token(user.id)
 
-    response = RedirectResponse("http://127.0.0.1:8501", status_code=302)
+    # 🔥 NEW LOGIC — redirect admin correctly
+    next_url = request.query_params.get("next", "")
+    if next_url.startswith("/admin"):
+        response = RedirectResponse(f"{FASTAPI_BASE_URL}{next_url}", status_code=302)
+    else:
+        response = RedirectResponse(STREAMLIT_BASE_URL, status_code=302)
 
     response.set_cookie(
         key="qr_session",
@@ -124,8 +128,6 @@ def login_user(
     )
 
     return response
-
-
 
 
 # LOGOUT ENDPOINT
@@ -238,7 +240,7 @@ def register(
     db.add(usage)
     db.commit()
 
-    send_activation_email(email, user.name, verify_token)
+    send_activation_email(email, user.name, verify_token,mode='activate')
 
     return templates.TemplateResponse("check_email.html", {
         "request": request,
@@ -276,25 +278,6 @@ def verify_user(token: str, request: Request, db: Session = Depends(get_db)):
     })
 
 
-# dashboard endpoint
-# @app.get("/dashboard")
-# def dashboard(request: Request, db: Session = Depends(get_db)):
-#     user_id = request.session.get("user_id")
-
-#     if not user_id:
-#         return RedirectResponse("/login", status_code=302)
-
-#     user = db.query(User).filter(User.id == user_id).first()
-#     plan = db.query(UserPlanDetails).filter_by(user_id=user.id, is_active=1).first()
-#     usage = db.query(UsageStats).filter_by(user_id=user.id).first()
-
-#     return templates.TemplateResponse("dashboard.html", {
-#         "request": request,
-#         "user": user,
-#         "plan": plan,
-#         "usage": usage
-#     })
-
 # end of dashboard endpoint
 
 # API to get user profile
@@ -322,32 +305,9 @@ def log_usage(user_id: int, event_type: str = Form(...), count: int = Form(...),
 # End point for QR COde limit usage update
 
 
-
-# Fetch live usage for validation in streamlit app
-# @app.get("/api/usage/{user_id}")
-# def get_usage(user_id: int, db: Session = Depends(get_db)):
-#     today = datetime.utcnow().date()
-#     used = db.query(func.sum(QRUsageEvent.count)) \
-#              .filter(QRUsageEvent.user_id==user_id,
-#                      QRUsageEvent.status=="unbilled",
-#                      QRUsageEvent.created_at >= today).scalar() or 0
-#     return {"used": used, "limit": FREE_PLAN_LIMIT}
-
 from sqlalchemy import func
 from auth_server.models import QRUsageEvent
 
-# @app.get("/api/usage/{user_id}")
-# def get_usage(user_id: int, db: Session = Depends(get_db)):
-#     today = datetime.utcnow().date()
-
-#     used = db.query(func.sum(QRUsageEvent.count)) \
-#         .filter(
-#             QRUsageEvent.user_id == user_id,
-#             QRUsageEvent.status == "unbilled",
-#             QRUsageEvent.created_at >= today
-#         ).scalar() or 0
-
-#     return {"used": int(used)}
 
 @app.get("/api/usage/{user_id}")
 def get_usage(user_id:int, db:Session=Depends(get_db)):
@@ -428,7 +388,7 @@ def resend_activation_get(request: Request, email: str, db: Session = Depends(ge
         user.verify_token = str(uuid4())
         user.token_expiry = datetime.utcnow() + timedelta(minutes=30)
         db.commit()
-        send_activation_email(user.email, user.verify_token, user.name)
+        send_activation_email(user.email, user.name, user.verify_token, mode='activate')
 
     return templates.TemplateResponse("check_email.html", {
         "request": request,
@@ -452,7 +412,7 @@ def resend_activation(request: Request,
         user.verify_token = str(uuid4())
         user.token_expiry = datetime.utcnow() + timedelta(minutes=30)
         db.commit()
-        send_activation_email(user.email, user.verify_token)
+        send_activation_email(user.email,user.name, user.verify_token,mode='activate')
 
     return templates.TemplateResponse("check_email.html", {
         "request": request,
@@ -488,7 +448,7 @@ def resend_submit(request: Request, email: str = Form(...), db: Session = Depend
     db.commit()
 
     # send_activation_email(user.email, user.verify_token, user.name)
-    send_activation_email(user.email, user.name, user.verify_token)
+    send_activation_email(user.email, user.name, user.verify_token,mode='activate')
 
     return templates.TemplateResponse("resend_activation.html", {
         "request": request,
@@ -550,8 +510,10 @@ def lead_page(request: Request, plan: str):
 # end of lead end point - get
 
 # leads end point
+
 @app.post("/api/lead")
 def save_lead(
+    request: Request,
     name: str = Form(...),
     business_name: str = Form(...),
     email: str = Form(...),
@@ -560,6 +522,17 @@ def save_lead(
     source: str = Form("WEB"),
     db: Session = Depends(get_db)
 ):
+    # 🔴 Already a user → no lead
+    if db.query(User).filter(User.email == email).first():
+        return templates.TemplateResponse("lead_exists.html", {"request": request})
+
+    # 🔴 Active lead exists → block duplicate
+    existing = db.query(Lead)\
+        .filter(Lead.email == email, Lead.plan == plan, Lead.status == "NEW").first()
+
+    if existing:
+        return templates.TemplateResponse("lead_exists.html", {"request": request})
+
     lead = Lead(
         name=name,
         business_name=business_name,
@@ -567,11 +540,16 @@ def save_lead(
         mobile=mobile,
         plan=plan,
         source=source,
-        created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        status="NEW",
+        created_at=datetime.utcnow()
     )
+
     db.add(lead)
     db.commit()
-    return {"msg": "Lead captured successfully"}
+
+    return templates.TemplateResponse("lead_success.html", {"request": request, "plan": plan})
+
+
 
 # end of leads end point
 
@@ -623,51 +601,6 @@ def validate_session(qr_session: str = Cookie(None), db: Session = Depends(get_d
     }
 
 
-# @app.get("/api/validate-session")
-# def validate_session(qr_session: str = Cookie(None), db: Session = Depends(get_db)):
-#     if not qr_session:
-#         raise HTTPException(401)
-
-#     try:
-#         user_id = verify_session_token(qr_session)
-#     except:
-#         raise HTTPException(401)
-
-#     user = db.query(User).filter(User.id == user_id).first()
-#     if not user:
-#         raise HTTPException(401)
-
-#     return {
-#         "id": user.id,
-#         "name": user.name,
-#         "business_name": user.business_name,
-#         "plan": user.plan
-#     }
-
-
-# @app.get("/api/validate-session")
-# def validate_session(authorization: str = Header(None), db: Session = Depends(get_db)):
-#     if not authorization:
-#         raise HTTPException(401)
-
-#     try:
-#         user_id = verify_session_token(authorization)
-#     except:
-#         raise HTTPException(401)
-
-#     user = db.query(User).filter(User.id==user_id).first()
-#     if not user:
-#         raise HTTPException(401)
-
-#     return {
-#         "id": user.id,
-#         "name": user.name,
-#         "business_name": user.business_name,
-#         "plan": user.plan
-#     }
-
-
-
 
 # -----------------------------FAQ PAGE ENDPOINTS -----------------------------
 
@@ -682,64 +615,47 @@ def faq_page(request: Request):
 # Admin home endpoint
 
 from fastapi import Depends
-# from auth_server.security import admin_guard
+from fastapi.responses import HTMLResponse
+
+@app.get("/admin")
+def admin_home(request: Request, db: Session = Depends(get_db)):
+    try:
+        admin = admin_required(request.cookies.get("qr_session"))
+    except HTTPException as e:
+        if e.detail == "LOGIN_REQUIRED":
+            return RedirectResponse("/login?next=/admin", status_code=302)
+        if e.detail == "NOT_ADMIN":
+            return templates.TemplateResponse("not_authorized.html", {"request": request})
+
+    return templates.TemplateResponse("admin_dashboard.html", {"request": request, "admin": admin})
 
 
-# @app.get("/admin")
-# def admin_home(request: Request, db:Session=Depends(get_db)):
-#     return templates.TemplateResponse("admin_dashboard.html", {"request":request})
-
-# @app.get("/admin", dependencies=[Depends(admin_guard)])
-# def admin_home(request: Request, db:Session=Depends(get_db)):
-#     return templates.TemplateResponse("admin_dashboard.html", {"request":request})
-
-# @app.get("/admin")
-# def admin_home(request: Request):
-#     guard = admin_guard(request)
-#     if isinstance(guard, (RedirectResponse, HTMLResponse)):
-#         return guard
-
-#     return templates.TemplateResponse("admin_dashboard.html", {"request": request})
+# from fastapi import Depends
+# # from auth_server.security import admin_guard
 
 
-# @app.get("/admin")
-# def admin_home(request: Request, db: Session = Depends(get_db)):
-#     guard = admin_guard(request, db)
-#     if guard: return guard
-#     return templates.TemplateResponse("admin_dashboard.html", {"request": request})
 
 @app.get("/admin")
 def admin_home(request: Request, admin=Depends(admin_required)):
     return templates.TemplateResponse("admin_dashboard.html", {"request": request})
 
 
-# LEADS WORK LSIT - ENDPOINT
-# def admin_leads(request: Request, db: Session = Depends(get_db),  dependencies=[Depends(admin_guard)]):
-#     leads = db.query(Lead).all()
-#     return templates.TemplateResponse("admin_leads.html", {
-#         "request": request,
-#         "leads": leads
-#     })
-
-# @app.get("/admin/leads")
-# def admin_leads(request: Request, db: Session = Depends(get_db)):
-#     # guard = admin_guard(request)
-#     # if isinstance(guard, (RedirectResponse, HTMLResponse)):
-#     #     return guard
-
-#     leads = db.query(Lead).all()
-#     return templates.TemplateResponse("admin_leads.html", {
-#         "request": request,
-#         "leads": leads
-#     })
-
 @app.get("/admin/leads")
-def admin_leads(request: Request, admin=Depends(admin_required), db: Session = Depends(get_db)):
-    leads = db.query(Lead).all()
-    return templates.TemplateResponse("admin_leads.html", {
-        "request": request,
-        "leads": leads
+def admin_leads(request: Request, admin=Depends(admin_required), plan:str="", db:Session=Depends(get_db)):
+    q = db.query(Lead)
+    if plan:
+        q = q.filter(Lead.plan==plan)
+    leads = q.all()
+    # templates = db.query(LeadEmailTemplate).all()
+    email_templates = db.query(LeadEmailTemplate).all()
+
+    return templates.TemplateResponse("admin_leads.html",{
+        "request":request,
+        "leads":leads,
+        "templates":email_templates,
+        "selected_plan":plan
     })
+
 
 
 # convert lead to user endpoint
@@ -782,6 +698,24 @@ def toggle_user(user_id:int, db:Session=Depends(get_db)):
     return RedirectResponse("/admin/users",status_code=302)
 
 
+# LEAD FOLLOWUP FOR OCNVERSION
+
+
+@app.post("/admin/lead-followup")
+def lead_followup(lead_ids: List[int]=Form(...), template_id:int=Form(...), db:Session=Depends(get_db)):
+    template=db.query(LeadEmailTemplate).filter(LeadEmailTemplate.id==template_id).first()
+    leads=db.query(Lead).filter(Lead.id.in_(lead_ids)).all()
+
+    for lead in leads:
+        body=template.body.replace("{{name}}",lead.name)
+        send_activation_email(lead.email,lead.name,body,mode="lead_followup")
+        lead.status="CONTACTED"
+        lead.last_followup=datetime.utcnow()
+
+    db.commit()
+    # return RedirectResponse("/admin/leads",302)
+    return RedirectResponse("/admin/leads?msg=Follow-up emails sent successfully", status_code=302)
+
 
 # Convert lead to user - post endpoint  
 from fastapi import Form
@@ -792,45 +726,127 @@ def convert_lead(
     plan: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    lead = db.query(Lead).filter(Lead.id==lead_id).first()
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
-        raise HTTPException(404)
+        raise HTTPException(404, "Lead not found")
 
-    # Create User
-    user = User(
-        name=lead.name,
-        business_name=lead.business_name,
-        mobile=lead.mobile,
-        email=lead.email,
-        password=hash_password("Welcome@123"),
-        verified=1,
-        plan=plan,
-        created_at=datetime.utcnow()
-    )
+    # 🔍 Check if user already exists
+    user = db.query(User).filter(User.email == lead.email).first()
 
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    if not user:
+        # ---- CREATE NEW USER ----
+        reset_token = str(uuid4())
+        reset_expiry = datetime.utcnow() + timedelta(minutes=30)
 
-    # Activate Plan
-    db.add(UserPlanDetails(
-        user_id=user.id,
-        plan_type=plan,
-        amount=4999 if plan=="paid" else 19999,
-        payment_status="success",
-        plan_start=datetime.utcnow(),
-        plan_expiry=datetime.utcnow()+timedelta(days=365),
-        is_active=1
-    ))
+        user = User(
+            name=lead.name,
+            business_name=lead.business_name,
+            mobile=lead.mobile,
+            email=lead.email,
+            verified=0,
+            reset_token=reset_token,
+            reset_expiry=reset_expiry,
+            plan=plan,
+            role="user",
+            is_active=1,
+            created_at=datetime.utcnow()
+        )
 
-    send_activation_email(user.email, user.name, "welcome")
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-    # Delete lead
-    db.delete(lead)
+        send_activation_email(user.email, user.name, reset_token, mode="set_password")
+
+    else:
+        # ---- EXISTING FREE USER → UPGRADE TO PAID ----
+        user.plan = plan
+        user.is_active = 1
+        db.commit()
+
+    # ---- ACTIVATE / UPDATE PLAN ----
+    existing_plan = db.query(UserPlanDetails)\
+        .filter(UserPlanDetails.user_id == user.id, UserPlanDetails.is_active == 1).first()
+
+    if existing_plan:
+        existing_plan.plan_type = plan
+        existing_plan.plan_start = datetime.utcnow()
+        existing_plan.plan_expiry = datetime.utcnow() + timedelta(days=365)
+    else:
+        db.add(UserPlanDetails(
+            user_id=user.id,
+            plan_type=plan,
+            amount=4999 if plan == "paid" else 19999,
+            payment_status="success",
+            plan_start=datetime.utcnow(),
+            plan_expiry=datetime.utcnow() + timedelta(days=365),
+            is_active=1
+        ))
+
+    # ---- DELETE LEAD ----
+    # db.delete(lead)
+    lead.status = "CONVERTED"
+    lead.last_followup = datetime.utcnow()
+
     db.commit()
 
     return RedirectResponse("/admin/leads", status_code=302)
 
+
+# @app.post("/admin/convert-lead")
+# def convert_lead(
+#     lead_id: int = Form(...),
+#     plan: str = Form(...),
+#     db: Session = Depends(get_db)
+# ):
+#     lead = db.query(Lead).filter(Lead.id == lead_id).first()
+#     if not lead:
+#         raise HTTPException(404, "Lead not found")
+
+#     # 🔐 Generate reset token
+#     reset_token = str(uuid4())
+#     reset_expiry = datetime.utcnow() + timedelta(minutes=30)
+
+#     # 🔹 Create User without password
+#     user = User(
+#         name=lead.name,
+#         business_name=lead.business_name,
+#         mobile=lead.mobile,
+#         email=lead.email,
+#         verified=0,
+#         reset_token=reset_token,
+#         reset_expiry=reset_expiry,
+#         plan=plan,
+#         created_at=datetime.utcnow()
+#     )
+
+#     db.add(user)
+#     db.commit()
+#     db.refresh(user)
+
+#     # 🔹 Activate Paid Plan
+#     plan_row = UserPlanDetails(
+#         user_id=user.id,
+#         plan_type=plan,
+#         amount=4999 if plan == "paid" else 19999,
+#         payment_status="success",
+#         plan_start=datetime.utcnow(),
+#         plan_expiry=datetime.utcnow() + timedelta(days=365),
+#         is_active=1
+#     )
+
+#     db.add(plan_row)
+#     db.commit()
+
+#     # 🔹 Send Set Password Email
+#     set_pwd_link = f"http://127.0.0.1:8000/set-password?token={reset_token}"
+#     send_activation_email(user.email, user.name, set_pwd_link,mode='set_password')
+
+#     # 🔹 Delete Lead
+#     db.delete(lead)
+#     db.commit()
+
+#     return RedirectResponse("/admin/leads", status_code=302)
 
 # CRON LIKE JOB AT STARTUP
 
@@ -851,7 +867,7 @@ def expiry_watcher():
             user = db.query(User).get(p.user_id)
             p.is_active = 0
             user.plan = "free"
-            send_activation_email(user.email, user.name, "expired")
+            send_activation_email(user.email, user.name, "expired",mode='activate')
 
         db.commit()
         db.close()
@@ -862,6 +878,28 @@ def expiry_watcher():
 @app.on_event("startup")
 def start_expiry_engine():
     Thread(target=expiry_watcher, daemon=True).start()
+
+# Seed Default Templates for Emails for Fee / Paid & Enterprise plans
+@app.on_event("startup")
+def seed_templates():
+    db = SessionLocal()
+    if not db.query(LeadEmailTemplate).first():
+        db.add_all([
+            LeadEmailTemplate(
+                name="Paid Plan Followup",
+                plan="paid",
+                subject="Upgrade to AI ROBO HUB PRO",
+                body="Hi {{name}},\nWe noticed your interest in PRO plan..."
+            ),
+            LeadEmailTemplate(
+                name="Enterprise Followup",
+                plan="enterprise",
+                subject="Enterprise QR Automation",
+                body="Hi {{name}},\nLet’s discuss enterprise deployment..."
+            )
+        ])
+        db.commit()
+    db.close()
 
 
 
@@ -882,5 +920,39 @@ def admin_renew(admin=Depends(admin_required), user_id: int = Form(...), db: Ses
     db.commit()
 
     return RedirectResponse("/admin/users", status_code=302)
+
+
+#-------------------------SET PASSWORD-------------------------------
+
+@app.get("/set-password")
+def set_password_page(token: str, request: Request, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user or user.reset_expiry < datetime.utcnow():
+        return templates.TemplateResponse("set_password_expired.html", {"request": request})
+
+    return templates.TemplateResponse("set_password.html", {
+        "request": request,
+        "token": token
+    })
+
+
+@app.post("/set-password")
+def set_password_submit(
+    token: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user:
+        raise HTTPException(400, "Invalid token")
+
+    user.password = hash_password(password)
+    user.verified = 1
+    user.reset_token = None
+    user.reset_expiry = None
+
+    db.commit()
+
+    return RedirectResponse("/login", status_code=302)
 
 

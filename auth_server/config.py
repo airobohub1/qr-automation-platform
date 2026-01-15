@@ -12,6 +12,10 @@ APP_NAME = os.getenv("APP_NAME")
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL")
 STREAMLIT_BASE_URL = os.getenv("STREAMLIT_BASE_URL")
 
+if not FASTAPI_BASE_URL or not STREAMLIT_BASE_URL:
+    raise Exception("FASTAPI_BASE_URL or STREAMLIT_BASE_URL missing in .env")
+
+
 SESSION_SECRET = os.getenv("SESSION_SECRET")
 
 MAIL_HOST = os.getenv("MAIL_HOST")

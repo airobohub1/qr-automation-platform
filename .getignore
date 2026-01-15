@@ -1,6 +1,12 @@
 __pycache__/
 *.pyc
 .venv/
+venv/
 .env
 .env.*
 .streamlit/
+users.db
+site-packages/
+jupyter/
+typing/
+*.xlsx
