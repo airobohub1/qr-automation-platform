@@ -118,9 +118,6 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 
-
-
-from fastapi.responses import RedirectResponse
 from urllib.parse import quote
 
 @app.post("/login")
@@ -150,19 +147,58 @@ def login_user(
 
     # 🔥 NEW LOGIC — redirect admin correctly
     next_url = request.query_params.get("next", "")
+    
+    # BELOW FOUR LINES FOR DEVELOPMENT ONLY
+    
+    # if next_url.startswith("/admin"):
+    #     response = RedirectResponse(f"{FASTAPI_BASE_URL}{next_url}", status_code=302)
+    # else:
+    #     response = RedirectResponse(STREAMLIT_BASE_URL, status_code=302)
+    
+    # BELOW FOUR LINES FOR PRODUCTION ONLY
+    
+    # if next_url.startswith("/admin"):
+    #     response = RedirectResponse(next_url, status_code=302)
+    # else:
+    #     response = RedirectResponse("/qr", status_code=302)
+
     if next_url.startswith("/admin"):
-        response = RedirectResponse(f"{FASTAPI_BASE_URL}{next_url}", status_code=302)
+        response = RedirectResponse(next_url, status_code=302)
     else:
-        response = RedirectResponse(STREAMLIT_BASE_URL, status_code=302)
+        # response = RedirectResponse("https://app.airobohub.com", status_code=302)
+        host = request.headers.get("host")
+
+        # if running locally, keep localhost
+        if "localhost" in host or "127.0.0.1" in host:
+            target = "http://localhost:8501"
+        else:
+            # production: switch to app subdomain
+            domain = host.split(":")[0]  # remove port
+            base_domain = ".".join(domain.split(".")[-2:])
+            target = f"https://app.{base_domain}"
+
+        response = RedirectResponse(target, status_code=302)
+
 
     response.set_cookie(
         key="qr_session",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite="none",
+        secure=True,
+        domain=".airobohub.com",
         path="/"
     )
+
+
+    # response.set_cookie(
+    #     key="qr_session",
+    #     value=token,
+    #     httponly=True,
+    #     samesite="lax",
+    #     secure=False,
+    #     path="/"
+    # )
 
     return response
 
@@ -311,6 +347,7 @@ def verify_user(token: str, request: Request, db: Session = Depends(get_db)):
     #     "success": "Account activated successfully. Please login now."
     return templates.TemplateResponse("activation_success.html", {
     "request": request,
+    "BASE_URL":FASTAPI_BASE_URL,
     "datetime":datetime
     })
 
@@ -456,14 +493,15 @@ def resend_activation(request: Request,
     return templates.TemplateResponse("check_email.html", {
         "request": request,
         "email": email,
-        "msg": "A new activation link has been sent to your email."
+        "msg": "A new activation link has been sent to your email.",
+        "BASE_URL":FASTAPI_BASE_URL
     })
 
 
 
 @app.get("/resend-activation")
 def resend_page(request: Request):
-    return templates.TemplateResponse("resend_activation.html", {"request": request})
+    return templates.TemplateResponse("resend_activation.html", {"request": request,"BASE_URL":FASTAPI_BASE_URL})
 
 @app.post("/resend-activation")
 def resend_submit(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
@@ -473,13 +511,15 @@ def resend_submit(request: Request, email: str = Form(...), db: Session = Depend
     if not user:
         return templates.TemplateResponse("resend_activation.html", {
             "request": request,
-            "error": "Account not found."
+            "error": "Account not found.",
+            "BASE_URL":FASTAPI_BASE_URL
         })
 
     if user.verified:
         return templates.TemplateResponse("resend_activation.html", {
             "request": request,
-            "error": "Account already activated. Please login."
+            "error": "Account already activated. Please login.",
+            "BASE_URL":FASTAPI_BASE_URL
         })
 
     user.verify_token = str(uuid4())
@@ -491,7 +531,8 @@ def resend_submit(request: Request, email: str = Form(...), db: Session = Depend
 
     return templates.TemplateResponse("resend_activation.html", {
         "request": request,
-        "msg": "New activation link sent to your email."
+        "msg": "New activation link sent to your email.",
+        "BASE_URL":FASTAPI_BASE_URL
     })
 
 
@@ -563,14 +604,14 @@ def save_lead(
 ):
     # 🔴 Already a user → no lead
     if db.query(User).filter(User.email == email).first():
-        return templates.TemplateResponse("lead_exists.html", {"request": request})
+        return templates.TemplateResponse("lead_exists.html", {"request": request,"BASE_URL":FASTAPI_BASE_URL})
 
     # 🔴 Active lead exists → block duplicate
     existing = db.query(Lead)\
         .filter(Lead.email == email, Lead.plan == plan, Lead.status == "NEW").first()
 
     if existing:
-        return templates.TemplateResponse("lead_exists.html", {"request": request})
+        return templates.TemplateResponse("lead_exists.html", {"request": request,"BASE_URL":FASTAPI_BASE_URL})
 
     lead = Lead(
         name=name,
@@ -586,7 +627,7 @@ def save_lead(
     db.add(lead)
     db.commit()
 
-    return templates.TemplateResponse("lead_success.html", {"request": request, "plan": plan})
+    return templates.TemplateResponse("lead_success.html", {"request": request, "plan": plan,"BASE_URL":FASTAPI_BASE_URL})
 
 
 
@@ -1063,3 +1104,15 @@ def set_password_submit(
     return RedirectResponse("/login", status_code=302)
 
 
+
+# from fastapi.responses import HTMLResponse
+# import subprocess
+
+# @app.get("/qr", response_class=HTMLResponse)
+# def qr_dashboard():
+#     subprocess.Popen([
+#         "streamlit", "run", "app/main.py",
+#         "--server.port=8501",
+#         "--server.address=127.0.0.1"
+#     ])
+#     return RedirectResponse(url="http://localhost:8501")

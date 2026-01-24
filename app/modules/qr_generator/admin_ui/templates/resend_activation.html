@@ -37,7 +37,7 @@
 <body>
 <div class="box">
     <h3>🔄 Resend Activation Link</h3>
-    <form action="/resend-activation" method="post">
+    <form action="{{ BASE_URL }}/resend-activation" method="post">
         <input type="email" name="email" placeholder="Enter registered email" required>
         <br>
         <button type="submit">Send New Link</button>

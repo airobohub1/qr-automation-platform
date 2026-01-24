@@ -83,7 +83,7 @@
     <h2>🚀 AI ROBO HUB</h2>
     <p class="subtitle">{{ plan | upper }} PLAN – Get Started</p>
 
-    <form method="post" action="/api/lead">
+    <form method="post" action="{{ BASE_URL }}/api/lead">
         <input name="name" placeholder="Full Name" required>
         <input name="business_name" placeholder="Business Name" required>
         <input name="email" placeholder="Email Address" required>

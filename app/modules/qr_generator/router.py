@@ -5,7 +5,9 @@ from .pages.dashboard import dashboard_page
 from .pages.profile import profile_page
 from .pages.single import single_qr_page
 from .pages.bulk import bulk_qr_page
-from qr_dashboard.ui.ui_layout import render_layout
+# from qr_dashboard.ui.ui_layout import render_layout
+# from app.modules.qr_generator.pages.ui_layout import render_layout
+
 import os
 
 load_dotenv()
@@ -17,11 +19,22 @@ def qr_router():
     if "page" not in st.session_state:
         st.session_state.page="dashboard"
 
+
     resp = validate_session(st.context.cookies)
     if resp.status_code != 200:
-        st.markdown("## 🔐 Please Login to Continue")
-        st.markdown(f"[Click here to Login]({FASTAPI_BASE_URL}/login)")
         st.stop()
+    
+    # if resp.status_code != 200:
+    #     st.markdown("## 🔐 Please Login to Continue")
+    #     st.markdown("[Click here to Login](/login)")
+    #     st.stop()
+
+    # resp = validate_session(st.context.cookies)
+    # if resp.status_code != 200:
+    #     st.markdown("## 🔐 Please Login to Continue")
+    #     # st.markdown(f"[Click here to Login]({FASTAPI_BASE_URL}/login)")
+    #     st.markdown("[Click here to Login](/login)")
+    #     st.stop()
 
     user = resp.json()
     user_id = user["id"]
@@ -29,7 +42,7 @@ def qr_router():
     business = user.get("business_name","")
     plan = user.get("plan","free")
 
-    render_layout({"name":user_name,"business_name":business,"plan":plan})
+    # render_layout({"name":user_name,"business_name":business,"plan":plan})
 
     st.sidebar.title("AI ROBO HUB")
     st.sidebar.markdown("### QR Automation Platform")
@@ -42,7 +55,15 @@ def qr_router():
     st.sidebar.markdown("---")
 
     if st.sidebar.button("🚪 Logout"):
-        st.markdown(f"<meta http-equiv='refresh' content='0; url={FASTAPI_BASE_URL}/logout'>", unsafe_allow_html=True)
+        # st.markdown(f"<meta http-equiv='refresh' content='0; url={FASTAPI_BASE_URL}/logout'>", unsafe_allow_html=True)
+        # st.markdown(f"<meta http-equiv='refresh' content='0; url=/logout'>", unsafe_allow_html=True)
+        # st.markdown(f"[Click here to Login]({FASTAPI_BASE_URL}/login)")
+
+        st.markdown(
+        f"<meta http-equiv='refresh' content='0; url={FASTAPI_BASE_URL}/logout'>",
+        unsafe_allow_html=True
+        )
+        
         st.stop()
 
     if st.session_state.page=="dashboard": dashboard_page(user_id,user_name,business)

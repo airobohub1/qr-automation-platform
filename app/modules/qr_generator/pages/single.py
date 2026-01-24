@@ -59,6 +59,10 @@ def single_qr_page(user_id):
         except:
             st.error("❌ Unable to check quota")
             return
+        
+        if "daily_remaining" not in quota:
+            st.error(quota.get("detail", "Quota information not available"))
+            st.stop()
 
         if quota["daily_remaining"]<=0 or quota["total_remaining"]<=0:
             st.error("❌ QR Limit Reached. Upgrade your plan.")
