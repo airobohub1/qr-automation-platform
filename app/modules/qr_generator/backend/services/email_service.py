@@ -1,20 +1,34 @@
+from http import server
 import os, smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from dotenv import load_dotenv
+
+# from dotenv import load_dotenv
 
 import os
 
-load_dotenv()
+# load_dotenv()
 # FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL")
 
 
+MAIL_HOST = os.getenv("MAIL_HOST")
+MAIL_PORT = os.getenv("MAIL_PORT")
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+
+
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL")
 SUPPORT_MOBILE = os.getenv("SUPPORT_MOBILE")
 COMPANY_NAME = os.getenv("COMPANY_NAME")
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL")
+
+if not all([MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD]):
+    raise RuntimeError(
+        f"SMTP not configured properly: "
+        f"MAIL_HOST={MAIL_HOST}, MAIL_PORT={MAIL_PORT}, "
+        f"MAIL_USERNAME={MAIL_USERNAME}, MAIL_PASSWORD={'SET' if MAIL_PASSWORD else None}"
+    )
+
 
 
 def send_activation_email(to_email: str, name: str, token: str, mode: str = "activate"):
@@ -70,14 +84,19 @@ def send_activation_email(to_email: str, name: str, token: str, mode: str = "act
     </html>
     """
 
+
     msg = MIMEMultipart("alternative")
-    msg["From"] = f"{COMPANY_NAME} <{MAIL_USERNAME}>"
+    # msg["From"] = f"{COMPANY_NAME} <noreply@airobohub.com>"\
+    msg["From"] = f"{COMPANY_NAME} <{os.getenv('MAIL_FROM')}>"
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.attach(MIMEText(html, "html"))
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
+    
+    
+    server = smtplib.SMTP(MAIL_HOST, int(MAIL_PORT))
     server.starttls()
     server.login(MAIL_USERNAME, MAIL_PASSWORD)
+
     server.send_message(msg)
     server.quit()

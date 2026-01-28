@@ -24,17 +24,6 @@ def qr_router():
     if resp.status_code != 200:
         st.stop()
     
-    # if resp.status_code != 200:
-    #     st.markdown("## 🔐 Please Login to Continue")
-    #     st.markdown("[Click here to Login](/login)")
-    #     st.stop()
-
-    # resp = validate_session(st.context.cookies)
-    # if resp.status_code != 200:
-    #     st.markdown("## 🔐 Please Login to Continue")
-    #     # st.markdown(f"[Click here to Login]({FASTAPI_BASE_URL}/login)")
-    #     st.markdown("[Click here to Login](/login)")
-    #     st.stop()
 
     user = resp.json()
     user_id = user["id"]
@@ -47,10 +36,21 @@ def qr_router():
     st.sidebar.title("AI ROBO HUB")
     st.sidebar.markdown("### QR Automation Platform")
 
-    if st.sidebar.button("🏠 Dashboard"): st.session_state.page="dashboard"
-    if st.sidebar.button("➕ Single QR"): st.session_state.page="single"
-    if st.sidebar.button("📂 Bulk QR"): st.session_state.page="bulk"
-    if st.sidebar.button("👤 Profile"): st.session_state.page="profile"
+    st.sidebar.markdown("---")
+
+    def nav(btn, page):
+        if st.sidebar.button(btn, use_container_width=True):
+            st.session_state.page = page
+
+    nav("🏠 Dashboard", "dashboard")
+    nav("➕ Single QR", "single")
+    nav("📂 Bulk QR", "bulk")
+    nav("👤 Profile", "profile")
+
+    # if st.sidebar.button("🏠 Dashboard"): st.session_state.page="dashboard"
+    # if st.sidebar.button("➕ Single QR"): st.session_state.page="single"
+    # if st.sidebar.button("📂 Bulk QR"): st.session_state.page="bulk"
+    # if st.sidebar.button("👤 Profile"): st.session_state.page="profile"
 
     st.sidebar.markdown("---")
 
@@ -66,7 +66,7 @@ def qr_router():
         
         st.stop()
 
-    if st.session_state.page=="dashboard": dashboard_page(user_id,user_name,business)
+    if st.session_state.page=="dashboard": dashboard_page(user_id,user_name,business,plan)
     elif st.session_state.page=="single": single_qr_page(user_id)
     elif st.session_state.page=="bulk": bulk_qr_page(user_id)
     elif st.session_state.page=="profile": profile_page(user_id)

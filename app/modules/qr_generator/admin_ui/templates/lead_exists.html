@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Already Exists | QRFlow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin:0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg,#eef2ff,#ffffff);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+        }
+        .card {
+            background:white;
+            width:90%;
+            max-width:520px;
+            padding:40px;
+            border-radius:12px;
+            box-shadow:0 15px 40px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+        h2 { color:#2b5cff; margin-bottom:10px; }
+        p { color:#555; line-height:1.6; }
+        .btn {
+            margin-top:25px;
+            display:inline-block;
+            background:#2b5cff;
+            color:white;
+            padding:12px 28px;
+            text-decoration:none;
+            border-radius:6px;
+            font-weight:600;
+        }
+        .logo {
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:20px;
+            color:#2b5cff;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">AI ROBO HUB – QRFlow</div>
+
+        <h2>⚠️ Account Already Exists</h2>
+
+        <p>
+            It looks like you already have an account with us.<br>
+            Please login to continue using the QR Automation Platform.
+        </p>
+
+        <a href="{{BASE_URL}}/login" class="btn">Go to Login</a>
+    </div>
+</body>
+</html>

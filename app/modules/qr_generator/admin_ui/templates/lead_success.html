@@ -1,6 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Request Submitted | QRFlow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin:0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg,#e0f7fa,#ffffff);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+        }
+        .card {
+            background:white;
+            width:90%;
+            max-width:560px;
+            padding:40px;
+            border-radius:12px;
+            box-shadow:0 15px 40px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+        h2 { color:#0a7cff; margin-bottom:10px; }
+        p { color:#555; line-height:1.6; }
+        .plan {
+            font-size:18px;
+            font-weight:600;
+            color:#2b5cff;
+            margin:10px 0;
+        }
+        .btn {
+            margin-top:25px;
+            display:inline-block;
+            background:#2b5cff;
+            color:white;
+            padding:12px 28px;
+            text-decoration:none;
+            border-radius:6px;
+            font-weight:600;
+        }
+        .contact {
+            margin-top:20px;
+            font-size:14px;
+            color:#777;
+        }
+        .logo {
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:20px;
+            color:#2b5cff;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">`
+        <div class="logo">AI ROBO HUB – QRFlow</div>
+
+        <h2>✅ Request Submitted Successfully</h2>
+
+        <p>Thank you for showing interest in our</p>
+        <div class="plan">{{ plan|upper }} PLAN</div>
+
+        <p>
+            Our onboarding team will contact you shortly to activate your account
+            and complete the setup process.
+        </p>
+
+        <div class="contact">
+            Need immediate help?<br>
+            📧 support@airobohub.com<br>
+            📞 +91 78936 88993
+        </div>
+
+        <a href="/" class="btn">Back to Home</a>
+    </div>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
 <title>Thank You</title>
 <style>
 body{background:#f6f7fb;font-family:Segoe UI;text-align:center;padding-top:80px}
@@ -16,4 +97,4 @@ a{color:#4f46e5;font-weight:600;text-decoration:none}
 <a href="/">Back to Home</a>
 </div>
 </body>
-</html>
+</html> -->

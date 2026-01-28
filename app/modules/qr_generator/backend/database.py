@@ -1,11 +1,8 @@
-
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-BASE_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../../../data/qr_generator")
-)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../data/qr_generator"))
 
 DB_PATH = os.path.join(BASE_DIR, "qr-generation.db")
 

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from .database import engine, Base
 # from .routes import auth, user, admin, leads
 
-app = FastAPI(title="QR Automation Platform")
+app = FastAPI(title="AI ROBO HUB - QR Automation Platform")
 
 @app.on_event("startup")
 def startup():
@@ -64,12 +64,14 @@ app = FastAPI()
 import os
 from fastapi.templating import Jinja2Templates
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# templates = Jinja2Templates(
+#     directory=os.path.join(BASE_DIR, "../admin_ui/templates")
+# )
 
 templates = Jinja2Templates(
-    directory=os.path.join(BASE_DIR, "../admin_ui/templates")
-)
-
+    directory="/app/app/modules/qr_generator/admin_ui/templates")
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -92,6 +94,7 @@ def ping():
 # HOME ENDPOINT
 @app.get("/")
 def home(request: Request):
+ 
     return templates.TemplateResponse("home.html", {"request": request})
 # End of HOME ENDPOINT
 
@@ -180,15 +183,37 @@ def login_user(
         response = RedirectResponse(target, status_code=302)
 
 
-    response.set_cookie(
-        key="qr_session",
-        value=token,
-        httponly=True,
-        samesite="none",
-        secure=True,
-        domain=".airobohub.com",
-        path="/"
-    )
+    # response.set_cookie(
+    #     key="qr_session",
+    #     value=token,
+    #     httponly=True,
+    #     samesite="none",
+    #     secure=True,
+    #     domain=".airobohub.com",
+    #     path="/"
+    # )
+
+    host = request.headers.get("host")
+
+    if "localhost" in host or "127.0.0.1" in host:
+        response.set_cookie(
+            key="qr_session",
+            value=token,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/"
+        )
+    else:
+        response.set_cookie(
+            key="qr_session",
+            value=token,
+            httponly=True,
+            samesite="none",
+            secure=True,
+            domain=".airobohub.com",
+            path="/"
+        )
 
 
     # response.set_cookie(
@@ -1116,3 +1141,100 @@ def set_password_submit(
 #         "--server.address=127.0.0.1"
 #     ])
 #     return RedirectResponse(url="http://localhost:8501")
+
+
+# MAKING USER AS ADMINTHROUGH URL WITHOUT ANY URL
+
+from fastapi import Query
+
+@app.get("/make-admin")
+def make_admin(email: str = Query(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return {"msg": "User not found"}
+
+    user.role = "admin"
+    db.commit()
+    return {"msg": f"{email} is now admin"}
+
+
+# @app.get("/make-me-admin")
+# def make_me_admin(db: Session = Depends(get_db)):
+#     user = db.query(User).filter(User.email == "ch_sriniw8z@hotmail.com").first()
+#     if not user:
+#         return {"msg": "User not found"}
+#     user.role = "admin"
+#     db.commit()
+#     return {"msg": "You are admin now"}
+
+
+# @app.get("/make-admin")
+# def make_admin(email: str):
+#     from app.modules.qr_generator.backend.database import SessionLocal
+#     from app.modules.qr_generator.backend.models import User
+
+#     db = SessionLocal()
+#     user = db.query(User).filter(User.email == email).first()
+#     user.role = "admin"
+#     db.commit()
+#     return {"status": "done"}
+
+
+
+# ===================== QR PUBLIC API (3rd Party Integration) =====================
+# (create qr_api.py under routes folder but not using we are currently using this only once router is setup then we can switch to that )
+# this will generate qr code as image or base 64 based on input
+import qrcode
+import base64
+from io import BytesIO
+from fastapi import Body
+from fastapi.responses import StreamingResponse
+
+@app.post("/api/qr/generate")
+def generate_qr(data: dict = Body(...)):
+    text = data.get("text")
+    size = data.get("size", 300)
+    fmt = data.get("format", "base64")
+
+    if not text:
+        raise HTTPException(400, "text is required")
+
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(text)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    img = img.resize((size, size))
+
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    if fmt == "png":
+        return StreamingResponse(buf, media_type="image/png")
+
+    img_base64 = base64.b64encode(buf.getvalue()).decode()
+
+    return {
+        "status": "success",
+        "qr_base64": img_base64
+    }
+
+
+# This endpoint will convert base64 into image
+@app.post("/api/qr/code-to-image")
+def code_to_image(data: dict = Body(...)):
+    qr_base64 = data.get("qr_code")
+
+    if not qr_base64:
+        raise HTTPException(400, "qr_code is required")
+
+    try:
+        img_bytes = base64.b64decode(qr_base64)
+    except Exception:
+        raise HTTPException(400, "Invalid QR code data")
+
+    buf = BytesIO(img_bytes)
+    return StreamingResponse(buf, media_type="image/png")
+
+# ===================== END OF QR PUBLIC API =====================
